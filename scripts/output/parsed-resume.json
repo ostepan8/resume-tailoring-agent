@@ -1,0 +1,190 @@
+{
+  "text": "\n\n \n \n Owen H. Stepan  \nChicago, IL | stepan.o@northeastern.edu | (312) 982-9808  \nLinkedIn | GitHub \n \nEDUCATION     \nNortheastern University, Boston, MA    Expected Graduation: May 2027 \nKhoury College of Computer Sciences   GPA: 3.85 \nCandidate for Bachelor of Science in Computer Science   Major GPA: 3.85  \n● Honors: Dean's List (3x)    \n● Relevant Coursework: Algorithms & Data, Object-Oriented Design, Programming in C++, Computer Systems \nCOMPUTER KNOWLEDGE             \nLanguages: Typescript, JavaScript, Kotlin, Java, Python, C, C++, C#, HTML, CSS \nTools & Frameworks: React.js, React Native, Tailwind, Next.js, Nest.js, Express.js, MongoDB, PostgreSQL, Vercel, Git, Numpy, Pandas \nEXPERIENCE     \nAhold Delhaize    Quincy, MA  \nMobile Application Engineer Co-op   January 2025 – June 2025 \n● Engineered a comprehensive JUnit 5 testing framework for the multi-module Item Management Android app, integrating SonarQube and \nJaCoCo with CI/CD pipelines to ensure 100% code coverage through robust tests, mocks, and dependency configurations. \n● Delivered a reusable Jetpack Compose component suite aligned with ADUSA design specs and micro-interactions for the store-facing app, \nwhile collaborating across engineering teams in a scrum environment using Jira and Confluence to drive coordination and delivery. \n● Solved performance bottlenecks in the TypeScript React Native Frontend Audit app by redesigning manager signature storage in Node.js \nand MongoDB from base64-encoded blobs to an ID-based system, significantly reducing database size and improving query performance. \n \nCode4Community                         Boston, MA \nDeveloper                  September 2024 – Present \n● Owned the development of user authentication and account management for ShelterLink, a React Native mobile app with a Nest.js \nbackend that supports LGBTQ+ individuals to find safe housing.  \n● Collaborated with engineers and designers in Agile sprints to build core features, including secure authentication flows, user profiles, and \nan interactive housing map with advanced filtering from a custom database. \n \nFeed Tech LLC, App Store, Website\n   Chicago, IL  \nCEO & Full-Stack Developer    December 2022 – Present \n● Led the end-to-end development of “Feed Official,” a full-stack social platform enabling food enthusiasts to post real-time meal captures, \nshare reviews, build thematic and location-based plate-lists, and engage via live messaging—built using the MERN stack. \n● Built a complementary high-performance web app using Next.js 13, TypeScript, and Tailwind CSS, seamlessly integrated with a shared \nMongoDB and Express API to ensure real-time sync with the mobile app; scaled to 150+ active users and 700+ posts. \n \nPROJECTS     \nQuill Programming Language Compiler   August 2025 – September 2025 \n● Built a Python-inspired programming language in C++17, implementing a complete compiler pipeline (lexer, recursive descent parser, \nflow-sensitive type checker, LLVM IR generator) that achieved 100% compilation success across comprehensive test suites and supported \nadvanced features like generics, unions, and structural typing. \n● Designed custom LLVM optimization passes, such as bit-shift arithmetic, cast elimination, and constant folding, that achieved a 4.1x \naverage performance gain and up to 11.5x speedup on recursive benchmarks. \n● Developed production-grade developer tooling, like a performance benchmarking suite, error reporting, and an automated build system, \nenabling performance validation across computational workloads. \nJARVIS AI Companion GitHub\n                         June 2024 – Present \n● Built an AI-powered personal assistant integrating OpenAI Whisper for real-time voice recognition, ElevenLabs for speech synthesis, and \nMongoDB for dynamic scheduling—enabling natural conversations, personalized wake-up briefings, and control of smart home devices. \n● Engineered a user profiling system that continuously learns from past interactions to capture preferences, routines, and contextual \nsignals—driving proactive, tailored responses across scheduling, automation, and daily assistance. \n \nSports Arbitrage Algorithm                         April 2024 – Present \n● Developed a multi-threaded Python algorithm to identify arbitrage opportunities across hundreds of sportsbooks by analyzing real-time \nbetting odds via the Odds API, enabling rapid detection of profitable bet combinations. \n● Achieved a net profit of $1,500 within the first two months of deployment. \nDiPasquale’s Sandwiches Website\n              February 2023 – April 2024 \n● Engineered a full-stack online ordering platform for a student-run sandwich business at Berkshire School using Next.js, MongoDB, Express, \nand Stripe, enabling classmates to securely place and pay for orders and merchandise through a polished web interface. \n● Built a real-time admin dashboard for managing menu items, pricing, and store hours, allowing the student operator to run daily \noperations independently; the platform facilitated over $6,000 in sales, automating workflows and enhancing customer experience. \n ",
+  "fullText": "\n\n \n \n Owen H. Stepan  \nChicago, IL | stepan.o@northeastern.edu | (312) 982-9808  \nLinkedIn | GitHub \n \nEDUCATION     \nNortheastern University, Boston, MA    Expected Graduation: May 2027 \nKhoury College of Computer Sciences   GPA: 3.85 \nCandidate for Bachelor of Science in Computer Science   Major GPA: 3.85  \n● Honors: Dean's List (3x)    \n● Relevant Coursework: Algorithms & Data, Object-Oriented Design, Programming in C++, Computer Systems \nCOMPUTER KNOWLEDGE             \nLanguages: Typescript, JavaScript, Kotlin, Java, Python, C, C++, C#, HTML, CSS \nTools & Frameworks: React.js, React Native, Tailwind, Next.js, Nest.js, Express.js, MongoDB, PostgreSQL, Vercel, Git, Numpy, Pandas \nEXPERIENCE     \nAhold Delhaize    Quincy, MA  \nMobile Application Engineer Co-op   January 2025 – June 2025 \n● Engineered a comprehensive JUnit 5 testing framework for the multi-module Item Management Android app, integrating SonarQube and \nJaCoCo with CI/CD pipelines to ensure 100% code coverage through robust tests, mocks, and dependency configurations. \n● Delivered a reusable Jetpack Compose component suite aligned with ADUSA design specs and micro-interactions for the store-facing app, \nwhile collaborating across engineering teams in a scrum environment using Jira and Confluence to drive coordination and delivery. \n● Solved performance bottlenecks in the TypeScript React Native Frontend Audit app by redesigning manager signature storage in Node.js \nand MongoDB from base64-encoded blobs to an ID-based system, significantly reducing database size and improving query performance. \n \nCode4Community                         Boston, MA \nDeveloper                  September 2024 – Present \n● Owned the development of user authentication and account management for ShelterLink, a React Native mobile app with a Nest.js \nbackend that supports LGBTQ+ individuals to find safe housing.  \n● Collaborated with engineers and designers in Agile sprints to build core features, including secure authentication flows, user profiles, and \nan interactive housing map with advanced filtering from a custom database. \n \nFeed Tech LLC, App Store, Website\n   Chicago, IL  \nCEO & Full-Stack Developer    December 2022 – Present \n● Led the end-to-end development of “Feed Official,” a full-stack social platform enabling food enthusiasts to post real-time meal captures, \nshare reviews, build thematic and location-based plate-lists, and engage via live messaging—built using the MERN stack. \n● Built a complementary high-performance web app using Next.js 13, TypeScript, and Tailwind CSS, seamlessly integrated with a shared \nMongoDB and Express API to ensure real-time sync with the mobile app; scaled to 150+ active users and 700+ posts. \n \nPROJECTS     \nQuill Programming Language Compiler   August 2025 – September 2025 \n● Built a Python-inspired programming language in C++17, implementing a complete compiler pipeline (lexer, recursive descent parser, \nflow-sensitive type checker, LLVM IR generator) that achieved 100% compilation success across comprehensive test suites and supported \nadvanced features like generics, unions, and structural typing. \n● Designed custom LLVM optimization passes, such as bit-shift arithmetic, cast elimination, and constant folding, that achieved a 4.1x \naverage performance gain and up to 11.5x speedup on recursive benchmarks. \n● Developed production-grade developer tooling, like a performance benchmarking suite, error reporting, and an automated build system, \nenabling performance validation across computational workloads. \nJARVIS AI Companion GitHub\n                         June 2024 – Present \n● Built an AI-powered personal assistant integrating OpenAI Whisper for real-time voice recognition, ElevenLabs for speech synthesis, and \nMongoDB for dynamic scheduling—enabling natural conversations, personalized wake-up briefings, and control of smart home devices. \n● Engineered a user profiling system that continuously learns from past interactions to capture preferences, routines, and contextual \nsignals—driving proactive, tailored responses across scheduling, automation, and daily assistance. \n \nSports Arbitrage Algorithm                         April 2024 – Present \n● Developed a multi-threaded Python algorithm to identify arbitrage opportunities across hundreds of sportsbooks by analyzing real-time \nbetting odds via the Odds API, enabling rapid detection of profitable bet combinations. \n● Achieved a net profit of $1,500 within the first two months of deployment. \nDiPasquale’s Sandwiches Website\n              February 2023 – April 2024 \n● Engineered a full-stack online ordering platform for a student-run sandwich business at Berkshire School using Next.js, MongoDB, Express, \nand Stripe, enabling classmates to securely place and pay for orders and merchandise through a polished web interface. \n● Built a real-time admin dashboard for managing menu items, pricing, and store hours, allowing the student operator to run daily \noperations independently; the platform facilitated over $6,000 in sales, automating workflows and enhancing customer experience. \n ",
+  "contactInfo": {
+    "name": "Owen H. Stepan",
+    "email": "stepan.o@northeastern.edu",
+    "phone": "(312) 982-9808",
+    "location": "Chicago, IL"
+  },
+  "experience": [
+    {
+      "id": "exp-1",
+      "company": "Ahold Delhaize",
+      "position": "Mobile Application Engineer Co-op",
+      "location": "Quincy, MA",
+      "startDate": "Jan 2025",
+      "endDate": "Jun 2025",
+      "bullets": [
+        "Engineered a comprehensive JUnit 5 testing framework for the multi-module Item Management Android app, integrating SonarQube and JaCoCo with CI/CD pipelines to ensure 100% code coverage through robust tests, mocks, and dependency configurations.",
+        "Delivered a reusable Jetpack Compose component suite aligned with ADUSA design specs and micro-interactions for the store-facing app, while collaborating across engineering teams in a scrum environment using Jira and Confluence to drive coordination and delivery.",
+        "Solved performance bottlenecks in the TypeScript React Native Frontend Audit app by redesigning manager signature storage in Node.js and MongoDB from base64-encoded blobs to an ID-based system, significantly reducing database size and improving query performance."
+      ]
+    },
+    {
+      "id": "exp-2",
+      "company": "Code4Community",
+      "position": "Developer",
+      "location": "Boston, MA",
+      "startDate": "Sep 2024",
+      "endDate": null,
+      "bullets": [
+        "Owned the development of user authentication and account management for ShelterLink, a React Native mobile app with a Nest.js backend that supports LGBTQ+ individuals to find safe housing.",
+        "Collaborated with engineers and designers in Agile sprints to build core features, including secure authentication flows, user profiles, and an interactive housing map with advanced filtering from a custom database."
+      ]
+    },
+    {
+      "id": "exp-3",
+      "company": "Feed Tech LLC, App Store, Website",
+      "position": "CEO & Full-Stack Developer",
+      "location": "Chicago, IL",
+      "startDate": "Dec 2022",
+      "endDate": null,
+      "bullets": [
+        "Led the end-to-end development of 'Feed Official,' a full-stack social platform enabling food enthusiasts to post real-time meal captures, share reviews, build thematic and location-based plate-lists, and engage via live messaging—built using the MERN stack.",
+        "Built a complementary high-performance web app using Next.js 13, TypeScript, and Tailwind CSS, seamlessly integrated with a shared MongoDB and Express API to ensure real-time sync with the mobile app; scaled to 150+ active users and 700+ posts."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu-1",
+      "institution": "Northeastern University",
+      "degree": "B.S.",
+      "field": "Computer Science",
+      "location": "Boston, MA",
+      "startDate": "2023",
+      "endDate": "2027",
+      "gpa": "3.85",
+      "highlights": [
+        "Dean's List (3x)",
+        "Relevant Coursework: Algorithms & Data, Object-Oriented Design, Programming in C++, Computer Systems"
+      ]
+    }
+  ],
+  "skills": {
+    "format": "categorized",
+    "categories": [
+      {
+        "name": "Languages",
+        "skills": [
+          "Typescript",
+          "JavaScript",
+          "Kotlin",
+          "Java",
+          "Python",
+          "C",
+          "C++",
+          "C#",
+          "HTML",
+          "CSS"
+        ]
+      },
+      {
+        "name": "Frameworks",
+        "skills": [
+          "React.js",
+          "React Native",
+          "Tailwind",
+          "Next.js",
+          "Nest.js",
+          "Express.js"
+        ]
+      },
+      {
+        "name": "Databases",
+        "skills": [
+          "MongoDB",
+          "PostgreSQL"
+        ]
+      },
+      {
+        "name": "Tools",
+        "skills": [
+          "Vercel",
+          "Git",
+          "Numpy",
+          "Pandas"
+        ]
+      }
+    ]
+  },
+  "projects": [
+    {
+      "id": "proj-1",
+      "name": "Quill Programming Language Compiler",
+      "description": "Python-inspired language and C++17 compiler pipeline with advanced features and LLVM-based optimizations.",
+      "technologies": [
+        "C++17",
+        "LLVM"
+      ],
+      "startDate": "Aug 2025",
+      "endDate": "Sep 2025",
+      "bullets": [
+        "Built a Python-inspired programming language in C++17, implementing a complete compiler pipeline (lexer, recursive descent parser, flow-sensitive type checker, LLVM IR generator) that achieved 100% compilation success across comprehensive test suites and supported advanced features like generics, unions, and structural typing.",
+        "Designed custom LLVM optimization passes, such as bit-shift arithmetic, cast elimination, and constant folding, that achieved a 4.1x average performance gain and up to 11.5x speedup on recursive benchmarks.",
+        "Developed production-grade developer tooling, like a performance benchmarking suite, error reporting, and an automated build system, enabling performance validation across computational workloads."
+      ]
+    },
+    {
+      "id": "proj-2",
+      "name": "JARVIS AI Companion",
+      "description": "AI assistant integrating OpenAI Whisper, ElevenLabs, and MongoDB for voice recognition, speech synthesis, and scheduling.",
+      "technologies": [
+        "OpenAI Whisper",
+        "ElevenLabs",
+        "MongoDB"
+      ],
+      "startDate": "Jun 2024",
+      "endDate": null,
+      "bullets": [
+        "Built an AI-powered personal assistant integrating OpenAI Whisper for real-time voice recognition, ElevenLabs for speech synthesis, and MongoDB for dynamic scheduling—enabling natural conversations, personalized wake-up briefings, and control of smart home devices.",
+        "Engineered a user profiling system that continuously learns from past interactions to capture preferences, routines, and contextual signals—driving proactive, tailored responses across scheduling, automation, and daily assistance."
+      ]
+    },
+    {
+      "id": "proj-3",
+      "name": "Sports Arbitrage Algorithm",
+      "description": "Python algorithm for detecting real-time sports betting arbitrage across sportsbooks using Odds API.",
+      "technologies": [
+        "Python",
+        "Odds API"
+      ],
+      "startDate": "Apr 2024",
+      "endDate": null,
+      "bullets": [
+        "Developed a multi-threaded Python algorithm to identify arbitrage opportunities across hundreds of sportsbooks by analyzing real-time betting odds via the Odds API, enabling rapid detection of profitable bet combinations.",
+        "Achieved a net profit of $1,500 within the first two months of deployment."
+      ]
+    },
+    {
+      "id": "proj-4",
+      "name": "DiPasquale’s Sandwiches Website",
+      "description": "Full-stack ordering platform for a student-run sandwich business using Next.js, MongoDB, Express, and Stripe.",
+      "technologies": [
+        "Next.js",
+        "MongoDB",
+        "Express",
+        "Stripe"
+      ],
+      "startDate": "Feb 2023",
+      "endDate": "Apr 2024",
+      "bullets": [
+        "Engineered a full-stack online ordering platform for a student-run sandwich business at Berkshire School using Next.js, MongoDB, Express, and Stripe, enabling classmates to securely place and pay for orders and merchandise through a polished web interface.",
+        "Built a real-time admin dashboard for managing menu items, pricing, and store hours, allowing the student operator to run daily operations independently; the platform facilitated over $6,000 in sales, automating workflows and enhancing customer experience."
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "title": "Experience",
+      "content": "Ahold Delhaize    Quincy, MA  \nMobile Application Engineer Co-op   January 2025 – June 2025 \n● Engineered a comprehensive JUnit 5 testing framework for the multi-module Item Management Android app, integrating SonarQube and JaCoCo with CI/CD pipelines to ensure 100% code coverage through robust tests, mocks, and dependency configurations. \n● Delivered a reusable Jetpack Compose component suite aligned with ADUSA design specs and micro-interactions for the store-facing app, while collaborating across engineering teams in a scrum environment using Jira and Confluence to drive coordination and delivery. \n● Solved performance bottlenecks in the TypeScript React Native Frontend Audit app by redesigning manager signature storage in Node.js and MongoDB from base64-encoded blobs to an ID-based system, significantly reducing database size and improving query performance.  \n\nCode4Community                         Boston, MA \nDeveloper                  September 2024 – Present \n● Owned the development of user authentication and account management for ShelterLink, a React Native mobile app with a Nest.js backend that supports LGBTQ+ individuals to find safe housing.  \n● Collaborated with engineers and designers in Agile sprints to build core features, including secure authentication flows, user profiles, and an interactive housing map with advanced filtering from a custom database.  \n\nFeed Tech LLC, App Store, Website\n   Chicago, IL  \nCEO & Full-Stack Developer    December 2022 – Present \n● Led the end-to-end development of “Feed Official,” a full-stack social platform enabling food enthusiasts to post real-time meal captures, share reviews, build thematic and location-based plate-lists, and engage via live messaging—built using the MERN stack. \n● Built a complementary high-performance web app using Next.js 13, TypeScript, and Tailwind CSS, seamlessly integrated with a shared MongoDB and Express API to ensure real-time sync with the mobile app; scaled to 150+ active users and 700+ posts. ",
+      "order": 0
+    },
+    {
+      "title": "Education",
+      "content": "Northeastern University, Boston, MA    Expected Graduation: May 2027 \nKhoury College of Computer Sciences   GPA: 3.85 \nCandidate for Bachelor of Science in Computer Science   Major GPA: 3.85  \n● Honors: Dean's List (3x)    \n● Relevant Coursework: Algorithms & Data, Object-Oriented Design, Programming in C++, Computer Systems ",
+      "order": 1
+    }
+  ]
+}

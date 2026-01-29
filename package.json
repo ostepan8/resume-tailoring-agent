@@ -1,0 +1,38 @@
+{
+  "name": "resume-tailor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seed": "npx ts-node scripts/seed-supabase-data.ts",
+    "seed:clear": "npx ts-node scripts/seed-supabase-data.ts --clear"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.3.2",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/supabase-js": "^2.91.0",
+    "@vercel/analytics": "^1.6.1",
+    "jspdf": "^2.5.2",
+    "next": "^14.2.5",
+    "openai": "^6.16.0",
+    "pdf-parse": "1.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-resizable-panels": "^4.4.1",
+    "subconscious": "^0.1.9",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import { createLogger, logError } from "@/lib/logger";
 
@@ -100,16 +101,13 @@ function getServerSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-async function getUserFromRequest(request: NextRequest): Promise<string | null> {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+async function getUserFromRequest(_request: NextRequest): Promise<string | null> {
+  try {
+    const { userId } = await auth();
+    return userId;
+  } catch {
     return null;
   }
-  const token = authHeader.slice(7);
-  const supabase = getServerSupabase();
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return null;
-  return user.id;
 }
 
 // ============================================

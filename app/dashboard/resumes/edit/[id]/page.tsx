@@ -86,7 +86,7 @@ function loadMockResumeById(id: string): StoredResume | null {
 export default function EditResumePage() {
     const params = useParams()
     const router = useRouter()
-    const { user, session } = useAuth()
+    const { user } = useAuth()
     const resumeId = params?.id as string
 
     // Loading state
@@ -130,12 +130,10 @@ export default function EditResumePage() {
                 // Try mock mode first
                 if (IS_MOCK_MODE || resumeId.startsWith('mock-')) {
                     resume = loadMockResumeById(resumeId)
-                } else if (user?.id && session?.access_token) {
-                    // Load from Supabase
+                } else if (user?.id) {
+                    // Load from Supabase - Clerk handles auth automatically via cookies
                     const response = await fetch(`/api/resume/${resumeId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${session.access_token}`,
-                        },
+                        credentials: 'include',
                     })
                     
                     if (response.ok) {
@@ -216,7 +214,7 @@ export default function EditResumePage() {
         }
 
         loadResume()
-    }, [resumeId, user?.id, session?.access_token])
+    }, [resumeId, user?.id])
 
     // Derive activeSection from activeView
     const activeSection = activeView.type === 'edit' ? activeView.sectionId : null

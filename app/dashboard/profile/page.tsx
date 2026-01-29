@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
+import { SkeletonProfileSection } from '../../components/Skeleton'
 import styles from './profile.module.css'
 
 interface ProfileFormData {
@@ -141,9 +142,16 @@ export default function ProfilePage() {
     if (loading) {
         return (
             <div className={styles.page}>
+                <header className={styles.header}>
+                    <div>
+                        <h1>Profile</h1>
+                        <p>Manage your personal information for resume generation.</p>
+                    </div>
+                </header>
                 <div className={styles.loadingState}>
-                    <div className={styles.loadingSpinner} />
-                    <p>Loading profile...</p>
+                    <SkeletonProfileSection />
+                    <SkeletonProfileSection />
+                    <SkeletonProfileSection />
                 </div>
             </div>
         )

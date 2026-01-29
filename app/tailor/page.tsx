@@ -23,7 +23,7 @@ type Step = 'job' | 'tailoring' | 'results'
 const log = createLogger('TailorPage')
 
 export default function TailorPage() {
-  const { user, session, loading, isConfigured } = useAuth()
+  const { user, loading, isConfigured } = useAuth()
   const router = useRouter()
   // Track if auth check is complete to prevent flash
   const [authChecked, setAuthChecked] = useState(false)
@@ -101,8 +101,6 @@ export default function TailorPage() {
 
     try {
       log('Fetching /api/tailor/stream...')
-      log('Session available:', !!session)
-      log('Access token available:', !!session?.access_token)
 
       const requestBody = {
         jobDescription: job,
@@ -111,20 +109,12 @@ export default function TailorPage() {
       }
       log('Request body:', JSON.stringify(requestBody, null, 2))
 
-      // Build headers with auth token
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      }
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`
-        log('Authorization header set')
-      } else {
-        log('WARNING: No access token available!')
-      }
-
+      // Clerk handles auth automatically via cookies/middleware
       const response = await fetch('/api/tailor/stream', {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include', // Send cookies for auth
         body: JSON.stringify(requestBody),
       })
@@ -245,7 +235,7 @@ export default function TailorPage() {
       log('ERROR in startTailoring:', err)
       setError(err instanceof Error ? err.message : 'Failed to tailor resume')
     }
-  }, [addThought, completeCurrentThought, session])
+  }, [addThought, completeCurrentThought])
 
   // Step 1: Job completed -> Start tailoring immediately
   const handleJobComplete = useCallback((job: JobDescription) => {

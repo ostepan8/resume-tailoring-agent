@@ -34,7 +34,7 @@ export function SaveResumeModal({
     originalResume,
     onSaveSuccess,
 }: SaveResumeModalProps) {
-    const { user, session } = useAuth()
+    const { user } = useAuth()
     const [resumeName, setResumeName] = useState(
         `${jobDescription.company} - ${jobDescription.title}`
     )
@@ -47,7 +47,7 @@ export function SaveResumeModal({
         // In mock mode or when Supabase isn't configured, skip auth check
         const isMockMode = IS_MOCK_MODE || !isSupabaseConfigured
         
-        if (!isMockMode && (!user || !session)) {
+        if (!isMockMode && !user) {
             setErrorMessage('You must be logged in to save resumes')
             setSaveStatus('error')
             return
@@ -89,18 +89,13 @@ export function SaveResumeModal({
             setSaveStatus('saving')
             setStatusMessage('Saving resume record...')
 
-            const headers: Record<string, string> = {
-                'Content-Type': 'application/json',
-            }
-            
-            // Only add auth header if we have a session
-            if (session?.access_token) {
-                headers['Authorization'] = `Bearer ${session.access_token}`
-            }
-
+            // Clerk handles auth automatically via cookies/middleware
             const response = await fetch('/api/resume/save-tailored', {
                 method: 'POST',
-                headers,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
                 body: JSON.stringify({
                     name: resumeName,
                     content: {
@@ -159,7 +154,7 @@ export function SaveResumeModal({
             setErrorMessage(err instanceof Error ? err.message : 'Failed to save resume')
             setSaveStatus('error')
         }
-    }, [user, session, resumeDoc, resumeName, tailoredResume, jobDescription, originalResume, onSaveSuccess])
+    }, [user, resumeDoc, resumeName, tailoredResume, jobDescription, originalResume, onSaveSuccess])
 
     const handleClose = () => {
         // Reset state when closing

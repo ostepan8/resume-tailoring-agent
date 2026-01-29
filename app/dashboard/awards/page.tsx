@@ -6,6 +6,7 @@ import {
     awardsDb,
     type Award,
 } from '../../../lib/database'
+import { SkeletonAwardCard } from '../../components/Skeleton'
 import styles from './awards.module.css'
 
 const AWARD_TYPES = [
@@ -175,9 +176,9 @@ export default function AwardsPage() {
             </header>
 
             {loading ? (
-                <div className={styles.loadingGrid}>
+                <div className={styles.awardsGrid}>
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className={styles.loadingCard} />
+                        <SkeletonAwardCard key={i} />
                     ))}
                 </div>
             ) : awards.length > 0 ? (

@@ -118,6 +118,7 @@ const TOUR_STEPS: TourStep[] = [
 export default function OnboardingTour({ onComplete, userName }: OnboardingTourProps) {
     const [currentStep, setCurrentStep] = useState(0)
     const [isVisible, setIsVisible] = useState(false)
+    const [isReady, setIsReady] = useState(false) // New: wait for elements to be positioned
     const [isExiting, setIsExiting] = useState(false)
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
     const [isNavigating, setIsNavigating] = useState(false)
@@ -136,21 +137,25 @@ export default function OnboardingTour({ onComplete, userName }: OnboardingTourP
         // For centered steps or demo steps, clear the target rect
         if (!step.targetSelector || step.position === 'center' || step.showDemo) {
             setTargetRect(null)
-            return
+            return true // Centered steps are always "ready"
         }
 
         const target = document.querySelector(step.targetSelector)
         if (target) {
             const rect = target.getBoundingClientRect()
-            setTargetRect(rect)
-        } else {
-            setTargetRect(null)
+            // Only consider ready if element has actual dimensions
+            if (rect.width > 0 && rect.height > 0) {
+                setTargetRect(rect)
+                return true
+            }
         }
+        setTargetRect(null)
+        return false
     }, [step.targetSelector, step.position, step.showDemo])
 
-    // Initial animation
+    // Initial animation - delay to let page fully render
     useEffect(() => {
-        const timer = setTimeout(() => setIsVisible(true), 100)
+        const timer = setTimeout(() => setIsVisible(true), 500)
         return () => clearTimeout(timer)
     }, [])
 
@@ -166,32 +171,75 @@ export default function OnboardingTour({ onComplete, userName }: OnboardingTourP
     useEffect(() => {
         if (step.targetPage === pathname) {
             setIsNavigating(false)
-            // Wait for page to render, then find target
-            const timer = setTimeout(updateTargetPosition, 300)
+        }
+    }, [pathname, step.targetPage])
+
+    // Wait for target elements to be ready before showing tooltip
+    useEffect(() => {
+        // Reset ready state when step changes
+        setIsReady(false)
+        setTargetRect(null)
+
+        // For centered or demo steps, mark ready after a brief delay
+        if (isCentered || step.showDemo) {
+            const timer = setTimeout(() => setIsReady(true), 200)
             return () => clearTimeout(timer)
         }
-    }, [pathname, step.targetPage, updateTargetPosition])
 
-    // Update target position on step change and window resize
+        // Poll for target element to be in DOM and have dimensions
+        let attempts = 0
+        const maxAttempts = 30 // 3 seconds max
+        let lastRect: DOMRect | null = null
+        let stableCount = 0
+        
+        const pollInterval = setInterval(() => {
+            attempts++
+            const ready = updateTargetPosition()
+            
+            if (ready) {
+                // Check if element position has stabilized (same position for 2 polls)
+                const target = document.querySelector(step.targetSelector!)
+                const currentRect = target?.getBoundingClientRect()
+                
+                if (currentRect && lastRect && 
+                    Math.abs(currentRect.top - lastRect.top) < 2 &&
+                    Math.abs(currentRect.left - lastRect.left) < 2) {
+                    stableCount++
+                    if (stableCount >= 2) {
+                        clearInterval(pollInterval)
+                        // Delay after element is stable to ensure smooth appearance
+                        setTimeout(() => setIsReady(true), 300)
+                    }
+                } else {
+                    stableCount = 0
+                }
+                
+                lastRect = currentRect || null
+            } else if (attempts >= maxAttempts) {
+                clearInterval(pollInterval)
+                // Fall back to showing centered if element not found
+                setIsReady(true)
+            }
+        }, 100)
+        
+        return () => clearInterval(pollInterval)
+    }, [currentStep, step.showDemo, isCentered, step.targetSelector, updateTargetPosition])
+
+    // Update target position on window resize/scroll
     useEffect(() => {
-        // Immediately clear targetRect when step changes to prevent stale positioning
-        setTargetRect(null)
-        
-        // Then update to new position after a brief delay
-        const timer = setTimeout(() => {
-            updateTargetPosition()
-        }, 50)
-        
-        const handleResize = () => updateTargetPosition()
+        const handleResize = () => {
+            if (isReady) {
+                updateTargetPosition()
+            }
+        }
         window.addEventListener('resize', handleResize)
         window.addEventListener('scroll', handleResize)
         
         return () => {
-            clearTimeout(timer)
             window.removeEventListener('resize', handleResize)
             window.removeEventListener('scroll', handleResize)
         }
-    }, [updateTargetPosition, currentStep])
+    }, [updateTargetPosition, isReady])
 
     const handleComplete = useCallback(() => {
         setIsExiting(true)
@@ -216,8 +264,10 @@ export default function OnboardingTour({ onComplete, userName }: OnboardingTourP
     }, [currentStep])
 
     const handleSkip = useCallback(() => {
+        // Don't allow skipping until fully rendered
+        if (!isReady) return
         handleComplete()
-    }, [handleComplete])
+    }, [handleComplete, isReady])
 
     // Handle click on highlighted element (for requiresClick steps)
     const handleHighlightClick = useCallback(() => {
@@ -251,6 +301,9 @@ export default function OnboardingTour({ onComplete, userName }: OnboardingTourP
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't allow any keyboard navigation until fully rendered
+            if (!isReady) return
+            
             // Don't allow keyboard next if click is required
             if (e.key === 'ArrowRight' || e.key === 'Enter') {
                 if (!requiresClick) {
@@ -265,7 +318,7 @@ export default function OnboardingTour({ onComplete, userName }: OnboardingTourP
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [handleNext, handlePrevious, handleSkip, requiresClick])
+    }, [handleNext, handlePrevious, handleSkip, requiresClick, isReady])
 
     // Calculate tooltip position
     const getTooltipStyle = (): React.CSSProperties => {
@@ -365,8 +418,11 @@ export default function OnboardingTour({ onComplete, userName }: OnboardingTourP
         return step.title
     }
 
+    // Don't render anything until ready to prevent flashing
+    const showContent = isVisible && isReady
+
     return (
-        <div className={`${styles.overlay} ${isVisible ? styles.visible : ''} ${isExiting ? styles.exiting : ''}`}>
+        <div className={`${styles.overlay} ${showContent ? styles.visible : ''} ${isExiting ? styles.exiting : ''}`}>
             {/* Spotlight overlay */}
             <div 
                 className={`${styles.spotlight} ${isCentered ? styles.dimmed : ''}`}

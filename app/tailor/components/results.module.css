@@ -664,7 +664,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(16, 24, 32, 0.9);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -675,13 +675,13 @@
 
 .modal {
   background: var(--color-primary-black);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(62, 208, 195, 0.15);
   border-radius: 20px;
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(16, 24, 32, 0.6);
 }
 
 .modalHeader {

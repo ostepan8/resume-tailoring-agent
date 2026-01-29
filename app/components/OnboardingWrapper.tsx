@@ -22,7 +22,11 @@ export default function OnboardingWrapper() {
             const needsOnboarding = !profile.has_completed_onboarding
             
             if (isProtectedRoute && needsOnboarding) {
-                setShowOnboarding(true)
+                // Delay showing onboarding to let page elements fully render and stabilize
+                const timer = setTimeout(() => {
+                    setShowOnboarding(true)
+                }, 800)
+                return () => clearTimeout(timer)
             }
         }
     }, [loading, user, profile, pathname])

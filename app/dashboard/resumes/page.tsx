@@ -17,6 +17,7 @@ import {
     type Skill,
     type UserProject,
 } from '../../../lib/database'
+import { SkeletonResumeCard } from '../../components/Skeleton'
 import styles from './resumes.module.css'
 
 // Only mock mode if explicitly set - in development we still use real Supabase if configured
@@ -164,7 +165,7 @@ interface ExtractedData {
 // ============================================
 
 export default function ResumesPage() {
-    const { user, session } = useAuth()
+    const { user } = useAuth()
     const [resumes, setResumes] = useState<ResumeWithJob[]>([])
     const [loading, setLoading] = useState(true)
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
@@ -256,9 +257,11 @@ export default function ResumesPage() {
             formData.append('file', file)
 
             log('Calling /api/resume/parse')
+            // Clerk handles auth automatically via cookies/middleware
             const response = await fetch('/api/resume/parse', {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
             })
             log('Parse response status:', response.status)
 
@@ -625,12 +628,13 @@ export default function ResumesPage() {
 
             log('Sync payload:', payload)
 
+            // Clerk handles auth automatically via cookies/middleware
             const syncResponse = await fetch('/api/resume/sync-profile', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify(payload),
             })
 
@@ -1217,9 +1221,9 @@ export default function ResumesPage() {
                     )}
 
                     {loading ? (
-                        <div className={styles.loadingGrid}>
+                        <div className={styles.resumesGrid}>
                             {[1, 2].map((i) => (
-                                <div key={i} className={styles.loadingCard} />
+                                <SkeletonResumeCard key={i} />
                             ))}
                         </div>
                     ) : filteredResumes.length > 0 ? (

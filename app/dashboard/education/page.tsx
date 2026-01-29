@@ -6,6 +6,7 @@ import {
     educationDb,
     type Education,
 } from '../../../lib/database'
+import { SkeletonExperienceCard } from '../../components/Skeleton'
 import styles from './education.module.css'
 
 export default function EducationPage() {
@@ -165,9 +166,9 @@ export default function EducationPage() {
             </header>
 
             {loading ? (
-                <div className={styles.loadingList}>
+                <div className={styles.educationList}>
                     {[1, 2].map((i) => (
-                        <div key={i} className={styles.loadingCard} />
+                        <SkeletonExperienceCard key={i} />
                     ))}
                 </div>
             ) : education.length > 0 ? (

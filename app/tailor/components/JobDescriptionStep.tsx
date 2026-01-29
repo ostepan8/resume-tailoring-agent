@@ -67,6 +67,11 @@ export const JobDescriptionStep = React.memo(function JobDescriptionStep({
   const fetchingRef = useRef(false)
   const lastFetchedUrlRef = useRef('')
   const mockLoadedRef = useRef(false)
+  
+  // Auth headers helper - Clerk handles auth automatically via cookies/middleware
+  const getAuthHeaders = useCallback(() => {
+    return { 'Content-Type': 'application/json' }
+  }, [])
 
   // Auto-load mock data on mount if mock mode is enabled
   useEffect(() => {
@@ -81,7 +86,7 @@ export const JobDescriptionStep = React.memo(function JobDescriptionStep({
       // Fetch mock data from API (which will return mock instantly)
       fetch('/api/job/fetch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ url: mockJobUrl }),
       })
         .then(res => res.json())
@@ -116,7 +121,7 @@ export const JobDescriptionStep = React.memo(function JobDescriptionStep({
     try {
       const response = await fetch('/api/job/fetch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ url }),
       })
 
@@ -180,7 +185,7 @@ export const JobDescriptionStep = React.memo(function JobDescriptionStep({
       log('Calling /api/job/parse...')
       const response = await fetch('/api/job/parse', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           text: jobText,
           title: manualTitle || undefined,

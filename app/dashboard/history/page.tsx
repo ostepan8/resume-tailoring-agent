@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useAuth } from '../../../lib/auth-context'
 import { historyDb, type TailoringHistory } from '../../../lib/database'
+import { SkeletonHistoryItem } from '../../components/Skeleton'
 import styles from './history.module.css'
 
 export default function HistoryPage() {
@@ -55,9 +56,9 @@ export default function HistoryPage() {
             </header>
 
             {loading ? (
-                <div className={styles.loadingList}>
+                <div className={styles.historyList}>
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className={styles.loadingItem} />
+                        <SkeletonHistoryItem key={i} />
                     ))}
                 </div>
             ) : history.length > 0 ? (

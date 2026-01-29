@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getSubconsciousClient, DEFAULT_ENGINE } from "@/lib/subconscious";
 import { createClient } from "@supabase/supabase-js";
 import { createLogger, logError } from "@/lib/logger";
@@ -49,7 +50,7 @@ interface ProfileData {
 }
 
 // ============================================
-// HELPER: Get user from auth header
+// HELPER: Get user from Clerk auth
 // ============================================
 
 interface AuthResult {
@@ -57,143 +58,26 @@ interface AuthResult {
   accessToken: string | null;
 }
 
-async function getUserFromRequest(request: NextRequest): Promise<AuthResult> {
-  const authHeader = request.headers.get("authorization");
-  const cookieHeader = request.headers.get("cookie");
+async function getUserFromRequest(_request: NextRequest): Promise<AuthResult> {
+  log("=== getUserFromRequest (Clerk) ===");
   
-  log("=== getUserFromRequest ===");
-  log("Auth header:", authHeader ? `${authHeader.substring(0, 30)}...` : "NOT PRESENT");
-  log("Cookie header:", cookieHeader ? `${cookieHeader.substring(0, 50)}...` : "NOT PRESENT");
-  
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  log("Supabase URL:", supabaseUrl ? "SET" : "NOT SET");
-  log("Supabase Anon Key:", supabaseAnonKey ? "SET" : "NOT SET");
-  log("Supabase Service Role Key:", supabaseServiceKey ? "SET" : "NOT SET");
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    log("ERROR: Supabase not configured");
-    return { user: null, accessToken: null };
-  }
-
-  // If we have a Bearer token, use the service role key to verify it
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.slice(7);
-    log("Using Bearer token for auth, token length:", token.length);
+  try {
+    const { userId } = await auth();
     
-    // Use service role key if available for proper token verification
-    const keyToUse = supabaseServiceKey || supabaseAnonKey;
-    log("Using key type:", supabaseServiceKey ? "SERVICE_ROLE" : "ANON");
-    
-    // Create client with the token in global headers for auth
-    const supabase = createClient(supabaseUrl, keyToUse, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    });
-    
-    // Get user - this should work with the token in headers
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error) {
-      log("ERROR getting user from token:", error.message);
-      
-      // Try alternative: decode JWT and extract user ID, then verify via admin
-      if (supabaseServiceKey) {
-        try {
-          // Decode JWT payload (middle part, base64url encoded)
-          const parts = token.split(".");
-          if (parts.length === 3) {
-            const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-            const payload = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf-8"));
-            log("JWT payload sub (user id):", payload.sub);
-            
-            if (payload.sub) {
-              // Use admin client to get user by ID
-              const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
-              const { data: userData, error: adminError } = await adminSupabase
-                .from("user_profiles")
-                .select("*")
-                .eq("id", payload.sub)
-                .single();
-              
-              if (!adminError && userData) {
-                log("SUCCESS: User verified via admin lookup:", payload.sub);
-                // Return a user-like object with the essential fields
-                return {
-                  user: {
-                    id: payload.sub,
-                    email: payload.email || userData.email,
-                  },
-                  accessToken: token,
-                };
-              } else {
-                log("Admin lookup failed:", adminError?.message);
-              }
-            }
-          }
-        } catch (decodeError) {
-          log("JWT decode error:", decodeError);
-        }
-      }
-      
+    if (!userId) {
+      log("No authenticated user found");
       return { user: null, accessToken: null };
     }
     
-    log("SUCCESS: User found from token:", user?.id, user?.email);
-    return { user, accessToken: token };
+    log("SUCCESS: User authenticated via Clerk:", userId);
+    return { 
+      user: { id: userId }, 
+      accessToken: null // Clerk handles auth differently, no access token needed
+    };
+  } catch (error) {
+    log("ERROR getting user from Clerk:", error);
+    return { user: null, accessToken: null };
   }
-
-  // Fallback: Try to extract token from Supabase cookies
-  if (cookieHeader) {
-    log("Attempting to extract token from cookies...");
-    
-    // Supabase stores auth in sb-<project-ref>-auth-token cookie
-    const cookies = cookieHeader.split(";").map(c => c.trim());
-    const authCookie = cookies.find(c => c.includes("-auth-token="));
-    
-    if (authCookie) {
-      log("Found auth cookie");
-      try {
-        // The cookie value is URL-encoded JSON with access_token and refresh_token
-        const cookieValue = authCookie.split("=").slice(1).join("=");
-        const decoded = decodeURIComponent(cookieValue);
-        // Handle both base64 and direct JSON formats
-        let tokenData;
-        try {
-          tokenData = JSON.parse(decoded);
-        } catch {
-          // Try base64 decode
-          const base64Decoded = Buffer.from(decoded, "base64").toString("utf-8");
-          tokenData = JSON.parse(base64Decoded);
-        }
-        
-        if (tokenData?.access_token) {
-          log("Extracted access_token from cookie, length:", tokenData.access_token.length);
-          const supabase = createClient(supabaseUrl, supabaseAnonKey);
-          const { data: { user }, error } = await supabase.auth.getUser(tokenData.access_token);
-          
-          if (error) {
-            log("ERROR getting user from cookie token:", error.message);
-          } else if (user) {
-            log("SUCCESS: User found from cookie token:", user?.id, user?.email);
-            return { user, accessToken: tokenData.access_token };
-          }
-        }
-      } catch (parseError) {
-        log("ERROR parsing auth cookie:", parseError);
-      }
-    } else {
-      log("No auth cookie found in cookies");
-    }
-  }
-
-  log("FAILED: Could not authenticate user");
-  return { user: null, accessToken: null };
 }
 
 // ============================================

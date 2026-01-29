@@ -7,6 +7,7 @@ import {
     jobsDb,
     type SavedJob,
 } from '../../../lib/database'
+import { SkeletonJobCard } from '../../components/Skeleton'
 import styles from './jobs.module.css'
 
 type JobStatus = SavedJob['status']
@@ -145,9 +146,9 @@ export default function JobsPage() {
             </div>
 
             {loading ? (
-                <div className={styles.loadingList}>
+                <div className={styles.jobsList}>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className={styles.loadingCard} />
+                        <SkeletonJobCard key={i} />
                     ))}
                 </div>
             ) : filteredJobs.length > 0 ? (

@@ -6,6 +6,7 @@ import {
     projectsDb,
     type UserProject,
 } from '../../../lib/database'
+import { SkeletonProjectCard } from '../../components/Skeleton'
 import styles from './projects.module.css'
 
 export default function ProjectsPage() {
@@ -145,9 +146,9 @@ export default function ProjectsPage() {
             </header>
 
             {loading ? (
-                <div className={styles.loadingGrid}>
+                <div className={styles.projectsGrid}>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className={styles.loadingCard} />
+                        <SkeletonProjectCard key={i} />
                     ))}
                 </div>
             ) : projects.length > 0 ? (

@@ -6,6 +6,7 @@ import {
     skillsDb,
     type Skill,
 } from '../../../lib/database'
+import { SkeletonSkillCard } from '../../components/Skeleton'
 import styles from './skills.module.css'
 
 const SKILL_CATEGORIES = [
@@ -240,10 +241,17 @@ export default function SkillsPage() {
             )}
 
             {loading ? (
-                <div className={styles.loadingGrid}>
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className={styles.loadingCard} />
-                    ))}
+                <div className={styles.skillsContainer}>
+                    <section className={styles.categorySection}>
+                        <div className={styles.categoryTitle}>
+                            <span style={{ opacity: 0.3 }}>Loading skills...</span>
+                        </div>
+                        <div className={styles.skillsGrid}>
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <SkeletonSkillCard key={i} />
+                            ))}
+                        </div>
+                    </section>
                 </div>
             ) : skills.length > 0 ? (
                 <div className={styles.skillsContainer}>

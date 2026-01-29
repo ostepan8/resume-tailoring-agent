@@ -8,11 +8,16 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "npx ts-node scripts/seed-supabase-data.ts",
-    "seed:clear": "npx ts-node scripts/seed-supabase-data.ts --clear"
+    "seed:clear": "npx ts-node scripts/seed-supabase-data.ts --clear",
+    "nuke": "npx ts-node scripts/nuke-database.ts",
+    "nuke:confirm": "npx ts-node scripts/nuke-database.ts --confirm"
   },
   "dependencies": {
+    "@clerk/backend": "^2.29.6",
+    "@clerk/nextjs": "^6.37.0",
     "@react-pdf/renderer": "^4.3.2",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.0",
     "@vercel/analytics": "^1.6.1",
     "jspdf": "^2.5.2",

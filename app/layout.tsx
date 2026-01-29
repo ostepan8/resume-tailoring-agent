@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Manrope, Chivo_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { ClerkProvider } from '@clerk/nextjs'
 import { AuthProvider } from '../lib/auth-context'
 import DevPanel from './components/DevPanel'
 import OnboardingWrapper from './components/OnboardingWrapper'
@@ -38,15 +39,17 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <html lang="en" className={`${manrope.variable} ${chivoMono.variable}`}>
-            <body>
-                <AuthProvider>
-                    {children}
-                    <OnboardingWrapper />
-                    <DevPanel />
-                </AuthProvider>
-                <Analytics />
-            </body>
-        </html>
+        <ClerkProvider>
+            <html lang="en" className={`${manrope.variable} ${chivoMono.variable}`}>
+                <body>
+                    <AuthProvider>
+                        {children}
+                        <OnboardingWrapper />
+                        <DevPanel />
+                    </AuthProvider>
+                    <Analytics />
+                </body>
+            </html>
+        </ClerkProvider>
     )
 }

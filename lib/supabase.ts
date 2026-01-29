@@ -1,3 +1,4 @@
+import { createBrowserClient } from '@supabase/ssr'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -35,19 +36,17 @@ function getSupabaseClient(): SupabaseClient {
     return globalThis.supabaseClient
   }
 
-  // Create new client
+  // Create new client using @supabase/ssr for proper cookie handling
   if (supabaseUrl && supabaseAnonKey) {
-    globalThis.supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    globalThis.supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         // Use default storage key to ensure consistency
         storageKey: 'sb-auth-token',
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        // Ensure we're using localStorage for persistence across refreshes
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        // Flow type for PKCE
-        flowType: 'pkce',
+        // Use implicit flow for email confirmations (tokens in URL hash)
+        flowType: 'implicit',
       },
     })
   } else {

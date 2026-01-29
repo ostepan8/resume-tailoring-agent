@@ -1,45 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import { useUser, useClerk, SignInButton } from '@clerk/nextjs'
 import { useAuth } from '../../lib/auth-context'
-import { supabase, isSupabaseConfigured } from '../../lib/supabase'
+import { isSupabaseConfigured } from '../../lib/supabase'
 import styles from './DevPanel.module.css'
 
 const IS_DEV = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
 export default function DevPanel() {
-    const { user, profile, session, loading, signOut, isConfigured } = useAuth()
+    const { profile, loading, signOut, isConfigured } = useAuth()
+    const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
+    const { openSignIn } = useClerk()
     const [isOpen, setIsOpen] = useState(false)
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [signInLoading, setSignInLoading] = useState(false)
-    const [signInError, setSignInError] = useState<string | null>(null)
 
     // Don't render anything if not in dev mode
     if (!IS_DEV) return null
-
-    const handleQuickSignIn = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setSignInLoading(true)
-        setSignInError(null)
-
-        try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
-            if (error) {
-                setSignInError(error.message)
-            } else {
-                setEmail('')
-                setPassword('')
-            }
-        } catch (err) {
-            setSignInError('Failed to sign in')
-        } finally {
-            setSignInLoading(false)
-        }
-    }
 
     const handleSignOut = async () => {
         await signOut()
@@ -49,15 +25,6 @@ export default function DevPanel() {
         localStorage.clear()
         sessionStorage.clear()
         alert('Storage cleared! Refresh the page.')
-    }
-
-    const handleRefreshSession = async () => {
-        const { data, error } = await supabase.auth.refreshSession()
-        if (error) {
-            alert(`Error: ${error.message}`)
-        } else {
-            alert(`Session refreshed! User: ${data.user?.email}`)
-        }
     }
 
     const copyToClipboard = (text: string) => {
@@ -91,19 +58,25 @@ export default function DevPanel() {
                             <h4>Status</h4>
                             <div className={styles.statusGrid}>
                                 <div className={styles.statusItem}>
+                                    <span className={styles.statusLabel}>Clerk</span>
+                                    <span className={`${styles.statusValue} ${clerkLoaded ? styles.success : styles.warning}`}>
+                                        {clerkLoaded ? '✅ Loaded' : '⏳ Loading'}
+                                    </span>
+                                </div>
+                                <div className={styles.statusItem}>
                                     <span className={styles.statusLabel}>Supabase</span>
                                     <span className={`${styles.statusValue} ${isConfigured ? styles.success : styles.error}`}>
                                         {isConfigured ? '✅ Connected' : '❌ Not configured'}
                                     </span>
                                 </div>
                                 <div className={styles.statusItem}>
-                                    <span className={styles.statusLabel}>Auth Loading</span>
+                                    <span className={styles.statusLabel}>Profile Loading</span>
                                     <span className={styles.statusValue}>{loading ? '⏳ Yes' : '✓ No'}</span>
                                 </div>
                                 <div className={styles.statusItem}>
-                                    <span className={styles.statusLabel}>Session</span>
-                                    <span className={`${styles.statusValue} ${session ? styles.success : styles.warning}`}>
-                                        {session ? '✅ Active' : '⚠️ None'}
+                                    <span className={styles.statusLabel}>Auth</span>
+                                    <span className={`${styles.statusValue} ${clerkUser ? styles.success : styles.warning}`}>
+                                        {clerkUser ? '✅ Signed In' : '⚠️ Not signed in'}
                                     </span>
                                 </div>
                             </div>
@@ -112,27 +85,27 @@ export default function DevPanel() {
                         {/* User Info */}
                         <section className={styles.section}>
                             <h4>User</h4>
-                            {user ? (
+                            {clerkUser ? (
                                 <div className={styles.userInfo}>
                                     <div className={styles.infoRow}>
                                         <span>Email:</span>
-                                        <code onClick={() => copyToClipboard(user.email || '')}>
-                                            {user.email}
+                                        <code onClick={() => copyToClipboard(clerkUser.primaryEmailAddress?.emailAddress || '')}>
+                                            {clerkUser.primaryEmailAddress?.emailAddress}
                                         </code>
                                     </div>
                                     <div className={styles.infoRow}>
-                                        <span>ID:</span>
-                                        <code onClick={() => copyToClipboard(user.id)} title="Click to copy">
-                                            {user.id.slice(0, 8)}...
+                                        <span>Clerk ID:</span>
+                                        <code onClick={() => copyToClipboard(clerkUser.id)} title="Click to copy">
+                                            {clerkUser.id.slice(0, 12)}...
                                         </code>
                                     </div>
                                     <div className={styles.infoRow}>
                                         <span>Name:</span>
-                                        <code>{profile?.full_name || 'Not set'}</code>
+                                        <code>{clerkUser.fullName || profile?.full_name || 'Not set'}</code>
                                     </div>
                                     <div className={styles.infoRow}>
-                                        <span>Confirmed:</span>
-                                        <code>{user.email_confirmed_at ? '✅ Yes' : '❌ No'}</code>
+                                        <span>Profile synced:</span>
+                                        <code>{profile ? '✅ Yes' : '❌ No'}</code>
                                     </div>
                                     <button onClick={handleSignOut} className={styles.dangerBtn}>
                                         Sign Out
@@ -141,30 +114,11 @@ export default function DevPanel() {
                             ) : (
                                 <div className={styles.signInForm}>
                                     <p className={styles.noUser}>No user signed in</p>
-                                    <form onSubmit={handleQuickSignIn}>
-                                        <input
-                                            type="email"
-                                            placeholder="Email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className={styles.input}
-                                        />
-                                        <input
-                                            type="password"
-                                            placeholder="Password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className={styles.input}
-                                        />
-                                        {signInError && <p className={styles.errorText}>{signInError}</p>}
-                                        <button
-                                            type="submit"
-                                            disabled={signInLoading || !isConfigured}
-                                            className={styles.primaryBtn}
-                                        >
-                                            {signInLoading ? 'Signing in...' : 'Quick Sign In'}
+                                    <SignInButton mode="modal">
+                                        <button className={styles.primaryBtn}>
+                                            Sign In with Clerk
                                         </button>
-                                    </form>
+                                    </SignInButton>
                                 </div>
                             )}
                         </section>
@@ -173,9 +127,6 @@ export default function DevPanel() {
                         <section className={styles.section}>
                             <h4>Actions</h4>
                             <div className={styles.actions}>
-                                <button onClick={handleRefreshSession} className={styles.actionBtn}>
-                                    🔄 Refresh Session
-                                </button>
                                 <button onClick={handleClearStorage} className={styles.actionBtn}>
                                     🗑️ Clear Storage
                                 </button>
@@ -186,7 +137,7 @@ export default function DevPanel() {
                                     🔃 Reload Page
                                 </button>
                                 <button
-                                    onClick={() => console.log({ user, profile, session, isConfigured })}
+                                    onClick={() => console.log({ clerkUser, profile, isConfigured })}
                                     className={styles.actionBtn}
                                 >
                                     📋 Log State
@@ -198,6 +149,14 @@ export default function DevPanel() {
                         <section className={styles.section}>
                             <h4>Environment</h4>
                             <div className={styles.envInfo}>
+                                <div className={styles.infoRow}>
+                                    <span>CLERK_KEY:</span>
+                                    <code>
+                                        {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+                                            ? '✅ Set (hidden)'
+                                            : '❌ Not set'}
+                                    </code>
+                                </div>
                                 <div className={styles.infoRow}>
                                     <span>SUPABASE_URL:</span>
                                     <code>

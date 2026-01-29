@@ -13,6 +13,10 @@ export const colors = {
   
   // Background
   backgroundCream: '#F0F3EF',
+  
+  // Status colors
+  error: '#ef4444',
+  success: '#22c55e',
 } as const;
 
 export type ColorKey = keyof typeof colors;

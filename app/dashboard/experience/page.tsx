@@ -6,6 +6,7 @@ import {
     experienceDb,
     type WorkExperience,
 } from '../../../lib/database'
+import { SkeletonExperienceCard } from '../../components/Skeleton'
 import styles from './experience.module.css'
 
 const EMPLOYMENT_TYPES = [
@@ -177,9 +178,9 @@ export default function ExperiencePage() {
             </header>
 
             {loading ? (
-                <div className={styles.loadingList}>
+                <div className={styles.experienceList}>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className={styles.loadingCard} />
+                        <SkeletonExperienceCard key={i} />
                     ))}
                 </div>
             ) : experiences.length > 0 ? (

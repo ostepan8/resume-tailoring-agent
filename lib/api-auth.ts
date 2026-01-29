@@ -3,14 +3,17 @@
  * 
  * Provides consistent authentication and authorization helpers
  * for API routes that require user authentication.
+ * 
+ * Uses Clerk for authentication.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
 /**
  * Create a server-side Supabase client with service role key
- * for verifying JWT tokens and performing admin operations.
+ * for performing database operations.
  */
 export function getServerSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,37 +33,22 @@ export function getServerSupabase() {
 }
 
 /**
- * Extract and verify user ID from the Authorization header.
+ * Get the authenticated user's ID from Clerk.
  * 
- * @param request - The Next.js request object
  * @returns User ID if authenticated, null otherwise
  * 
  * @example
  * ```typescript
- * const userId = await getUserFromRequest(request);
+ * const userId = await getUserFromRequest();
  * if (!userId) {
  *   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
  * }
  * ```
  */
-export async function getUserFromRequest(request: NextRequest): Promise<string | null> {
-  const authHeader = request.headers.get("authorization");
-  
-  if (!authHeader?.startsWith("Bearer ")) {
-    return null;
-  }
-
-  const token = authHeader.slice(7);
-  
+export async function getUserFromRequest(_request?: NextRequest): Promise<string | null> {
   try {
-    const supabase = getServerSupabase();
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return null;
-    }
-    
-    return user.id;
+    const { userId } = await auth();
+    return userId;
   } catch {
     return null;
   }
@@ -79,7 +67,7 @@ export function unauthorizedResponse(message = "Authentication required") {
 /**
  * Check if the request is authenticated and return user ID or error response.
  * 
- * @param request - The Next.js request object
+ * @param request - The Next.js request object (optional, kept for API compatibility)
  * @returns Object with userId if authenticated, or errorResponse if not
  * 
  * @example
@@ -91,11 +79,11 @@ export function unauthorizedResponse(message = "Authentication required") {
  * const userId = auth.userId;
  * ```
  */
-export async function requireAuth(request: NextRequest): Promise<{
+export async function requireAuth(_request?: NextRequest): Promise<{
   userId: string | null;
   errorResponse: NextResponse | null;
 }> {
-  const userId = await getUserFromRequest(request);
+  const userId = await getUserFromRequest();
   
   if (!userId) {
     return {

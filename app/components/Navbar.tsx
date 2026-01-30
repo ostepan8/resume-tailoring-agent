@@ -8,15 +8,14 @@ import {
   SignUpButton,
   SignedIn,
   SignedOut,
-  UserButton,
   useUser,
 } from '@clerk/nextjs'
 import { useAuth } from '../../lib/auth-context'
 import styles from './Navbar.module.css'
 
 export default function Navbar() {
-  const { profile, loading, isConfigured } = useAuth()
-  const { isLoaded: clerkLoaded } = useUser()
+  const { profile, loading, signOut, isConfigured } = useAuth()
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -30,6 +29,27 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleSignOut = async () => {
+    await signOut()
+    setShowUserMenu(false)
+  }
+
+  const getUserInitials = () => {
+    if (profile?.full_name && profile.full_name.trim()) {
+      return profile.full_name
+        .split(' ')
+        .filter(n => n.length > 0)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) || 'U'
+    }
+    if (clerkUser?.primaryEmailAddress?.emailAddress) {
+      return clerkUser.primaryEmailAddress.emailAddress[0].toUpperCase()
+    }
+    return 'U'
+  }
 
   const isLoading = loading || !clerkLoaded
 
@@ -78,31 +98,41 @@ export default function Navbar() {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     aria-expanded={showUserMenu}
                   >
-                    <UserButton 
-                      appearance={{
-                        elements: {
-                          avatarBox: {
-                            width: 32,
-                            height: 32,
-                          }
-                        }
-                      }}
-                    />
+                    {clerkUser?.imageUrl ? (
+                      <Image
+                        src={clerkUser.imageUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className={styles.userAvatar}
+                      />
+                    ) : (
+                      <div className={styles.userInitials}>{getUserInitials()}</div>
+                    )}
+                    <svg
+                      className={`${styles.chevron} ${showUserMenu ? styles.chevronUp : ''}`}
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
                   </button>
 
-                  {showUserMenu && isConfigured && (
+                  {showUserMenu && (
                     <div className={styles.userMenu}>
-                      {profile && (
-                        <>
-                          <div className={styles.userMenuHeader}>
-                            <p className={styles.userName}>
-                              {profile.full_name || 'User'}
-                            </p>
-                            <p className={styles.userEmail}>{profile.email}</p>
-                          </div>
-                          <div className={styles.userMenuDivider} />
-                        </>
-                      )}
+                      <div className={styles.userMenuHeader}>
+                        <p className={styles.userName}>
+                          {profile?.full_name || clerkUser?.fullName || 'User'}
+                        </p>
+                        <p className={styles.userEmail}>
+                          {profile?.email || clerkUser?.primaryEmailAddress?.emailAddress}
+                        </p>
+                      </div>
+                      <div className={styles.userMenuDivider} />
                       <Link
                         href="/dashboard/resumes"
                         className={styles.userMenuItem}
@@ -161,6 +191,25 @@ export default function Navbar() {
                         </svg>
                         Profile
                       </Link>
+                      <div className={styles.userMenuDivider} />
+                      <button
+                        className={styles.userMenuItemDanger}
+                        onClick={handleSignOut}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <polyline points="16 17 21 12 16 7" />
+                          <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Sign Out
+                      </button>
                     </div>
                   )}
                 </div>

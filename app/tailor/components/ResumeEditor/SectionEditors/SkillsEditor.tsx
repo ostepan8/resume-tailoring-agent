@@ -1,13 +1,21 @@
 'use client'
 
-import React, { useCallback, useId } from 'react'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
+import React, { useCallback, useId, useEffect, useState } from 'react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Icon } from '../icons'
 import type { SkillsBlock, SkillInput, SkillCategory } from '../../../../resume-test/types'
 import { getSkillText, isSkillEnabled, createSkill } from '../../../../resume-test/types'
 import styles from '../ResumeEditor.module.css'
+
+// Debug helper
+const isDev = process.env.NODE_ENV === 'development'
+const debugLog = (context: string, message: string, data?: unknown) => {
+    if (isDev) {
+        console.log(`[DnD:${context}]`, message, data !== undefined ? data : '')
+    }
+}
 
 // Sortable Skill Chip Component
 interface SortableSkillChipProps {
@@ -93,6 +101,8 @@ interface SortableCategoryProps {
     onUpdateCategoryName: (name: string) => void
     onRemoveCategory: () => void
     onSkillDragEnd: (event: DragEndEvent, catIndex: number) => void
+    onSkillDragStart: (event: DragStartEvent, catIndex: number) => void
+    activeSkillId: string | null
     onToggleSkill: (skillIndex: number) => void
     onUpdateSkill: (skillIndex: number, text: string) => void
     onRemoveSkill: (skillIndex: number) => void
@@ -110,6 +120,8 @@ function SortableCategory({
     onUpdateCategoryName,
     onRemoveCategory,
     onSkillDragEnd,
+    onSkillDragStart,
+    activeSkillId,
     onToggleSkill,
     onUpdateSkill,
     onRemoveSkill,
@@ -175,37 +187,52 @@ function SortableCategory({
                 </button>
             </div>
 
-            {catEnabled && (
-                <DndContext
-                    id={skillDndId}
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={(e) => onSkillDragEnd(e, catIndex)}
-                >
-                    <SortableContext items={skillIds} strategy={horizontalListSortingStrategy}>
-                        <div className={styles.skillsList}>
-                            {category.skills.map((skill, skillIndex) => (
-                                <SortableSkillChip
-                                    key={skillIds[skillIndex]}
-                                    id={skillIds[skillIndex]}
-                                    skill={skill}
-                                    onToggle={() => onToggleSkill(skillIndex)}
-                                    onUpdateText={(text) => onUpdateSkill(skillIndex, text)}
-                                    onRemove={() => onRemoveSkill(skillIndex)}
-                                />
-                            ))}
-                            <button
-                                type="button"
-                                className={`${styles.btn} ${styles.btnSecondary}`}
-                                onClick={onAddSkill}
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                            >
-                                <Icon name="plus" size={12} /> Add
-                            </button>
-                        </div>
-                    </SortableContext>
-                </DndContext>
-            )}
+            {catEnabled && (() => {
+                const activeSkill = activeSkillId
+                    ? category.skills.find((_, i) => skillIds[i] === activeSkillId)
+                    : null
+                const activeSkillText = activeSkill ? getSkillText(activeSkill) : null
+
+                return (
+                    <DndContext
+                        id={skillDndId}
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={(e) => onSkillDragStart(e, catIndex)}
+                        onDragEnd={(e) => onSkillDragEnd(e, catIndex)}
+                    >
+                        <SortableContext items={skillIds} strategy={horizontalListSortingStrategy}>
+                            <div className={styles.skillsList} data-nested-dnd="true">
+                                {category.skills.map((skill, skillIndex) => (
+                                    <SortableSkillChip
+                                        key={skillIds[skillIndex]}
+                                        id={skillIds[skillIndex]}
+                                        skill={skill}
+                                        onToggle={() => onToggleSkill(skillIndex)}
+                                        onUpdateText={(text) => onUpdateSkill(skillIndex, text)}
+                                        onRemove={() => onRemoveSkill(skillIndex)}
+                                    />
+                                ))}
+                                <button
+                                    type="button"
+                                    className={`${styles.btn} ${styles.btnSecondary}`}
+                                    onClick={onAddSkill}
+                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                >
+                                    <Icon name="plus" size={12} /> Add
+                                </button>
+                            </div>
+                        </SortableContext>
+                        <DragOverlay>
+                            {activeSkillText ? (
+                                <div className={styles.skillChipDragOverlay}>
+                                    {activeSkillText}
+                                </div>
+                            ) : null}
+                        </DragOverlay>
+                    </DndContext>
+                )
+            })()}
         </div>
     )
 }
@@ -218,6 +245,8 @@ interface SkillsEditorProps {
 export function SkillsEditor({ block, onUpdate }: SkillsEditorProps) {
     const categoryDndId = useId()
     const inlineSkillsDndId = useId()
+    const [activeSkillId, setActiveSkillId] = useState<string | null>(null)
+    const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
 
     // DnD sensors - use small activation distance for responsive dragging
     const sensors = useSensors(
@@ -231,54 +260,161 @@ export function SkillsEditor({ block, onUpdate }: SkillsEditorProps) {
         })
     )
 
+    // Debug log on mount
+    useEffect(() => {
+        debugLog('SkillsEditor', '📋 Skills loaded/updated', {
+            blockId: block.id,
+            format: block.data.format,
+            categoryCount: block.data.categories?.length || 0,
+            skillCount: block.data.skills?.length || 0,
+        })
+    }, [block.id, block.data])
+
+    // Category drag start handler
+    const handleCategoryDragStart = useCallback((event: DragStartEvent) => {
+        debugLog('SkillsEditor', '🟡 Category onDragStart', { activeId: event.active.id })
+        setActiveCategoryId(event.active.id as string)
+    }, [])
+
+    // Skill drag start handler (within category)
+    const handleSkillDragStart = useCallback((event: DragStartEvent, catIndex: number) => {
+        debugLog('SkillsEditor', `🟡 Skill drag start in category ${catIndex}`, {
+            activeId: event.active.id,
+        })
+        setActiveSkillId(event.active.id as string)
+    }, [])
+
     // Category reorder handler
     const handleCategoryDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
-        if (!over || active.id === over.id) return
+        setActiveCategoryId(null)
 
         const categories = block.data.categories || []
         const prefix = `category-${block.id}-`
+        const categoryIds = categories.map((_, i) => `${prefix}${i}`)
+
+        debugLog('SkillsEditor', '🟢 Category onDragEnd', {
+            activeId: active.id,
+            overId: over?.id,
+            hasOver: !!over,
+            sameId: active.id === over?.id,
+            categoryIds,
+        })
+
+        if (!over) {
+            debugLog('SkillsEditor', '⚠️ No drop target (over is null)')
+            return
+        }
+
+        if (active.id === over.id) {
+            debugLog('SkillsEditor', '⚠️ Dropped on same position')
+            return
+        }
+
         const oldIndex = categories.findIndex((_, i) => `${prefix}${i}` === active.id)
         const newIndex = categories.findIndex((_, i) => `${prefix}${i}` === over.id)
 
+        debugLog('SkillsEditor', '📦 Category reorder attempt', {
+            oldIndex,
+            newIndex,
+            activeId: active.id,
+            overId: over.id,
+            prefix,
+        })
+
         if (oldIndex !== -1 && newIndex !== -1) {
+            debugLog('SkillsEditor', '✅ Reordering categories')
             const reordered = arrayMove(categories, oldIndex, newIndex)
             onUpdate({ ...block.data, categories: reordered })
+        } else {
+            debugLog('SkillsEditor', '❌ Invalid category indices', {
+                oldIndex,
+                newIndex,
+                activeId: active.id,
+                overId: over.id,
+            })
         }
     }, [block.data, block.id, onUpdate])
 
     // Skill reorder within category handler
     const handleSkillDragEnd = useCallback((event: DragEndEvent, catIndex: number) => {
         const { active, over } = event
-        if (over && active.id !== over.id) {
-            const categories = [...(block.data.categories || [])]
-            const skills = [...categories[catIndex].skills]
-            // Skill IDs format: category-{blockId}-{catIndex}-skill-{skillIndex}
-            const activeIdParts = (active.id as string).split('-skill-')
-            const overIdParts = (over.id as string).split('-skill-')
-            const oldIndex = activeIdParts.length > 1 ? parseInt(activeIdParts[1], 10) : -1
-            const newIndex = overIdParts.length > 1 ? parseInt(overIdParts[1], 10) : -1
-            if (oldIndex !== -1 && newIndex !== -1 && oldIndex < skills.length && newIndex < skills.length) {
-                categories[catIndex] = {
-                    ...categories[catIndex],
-                    skills: arrayMove(skills, oldIndex, newIndex),
-                }
-                onUpdate({ ...block.data, categories })
+        setActiveSkillId(null)
+
+        debugLog('SkillsEditor', `🟢 Skill onDragEnd (category ${catIndex})`, {
+            activeId: active.id,
+            overId: over?.id,
+            hasOver: !!over,
+            catIndex,
+        })
+
+        if (!over) {
+            debugLog('SkillsEditor', '⚠️ No skill drop target')
+            return
+        }
+
+        if (active.id === over.id) {
+            debugLog('SkillsEditor', '⚠️ Skill dropped on same position')
+            return
+        }
+
+        const categories = [...(block.data.categories || [])]
+        const skills = [...categories[catIndex].skills]
+        // Skill IDs format: category-{blockId}-{catIndex}-skill-{skillIndex}
+        const activeIdParts = (active.id as string).split('-skill-')
+        const overIdParts = (over.id as string).split('-skill-')
+        const oldIndex = activeIdParts.length > 1 ? parseInt(activeIdParts[1], 10) : -1
+        const newIndex = overIdParts.length > 1 ? parseInt(overIdParts[1], 10) : -1
+
+        debugLog('SkillsEditor', '📦 Skill reorder attempt', {
+            activeId: active.id,
+            overId: over.id,
+            activeIdParts,
+            overIdParts,
+            oldIndex,
+            newIndex,
+            skillsCount: skills.length,
+        })
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex < skills.length && newIndex < skills.length) {
+            debugLog('SkillsEditor', '✅ Reordering skills in category')
+            categories[catIndex] = {
+                ...categories[catIndex],
+                skills: arrayMove(skills, oldIndex, newIndex),
             }
+            onUpdate({ ...block.data, categories })
+        } else {
+            debugLog('SkillsEditor', '❌ Invalid skill indices', {
+                oldIndex,
+                newIndex,
+                skillsCount: skills.length,
+            })
         }
     }, [block.data, onUpdate])
+
+    // Inline skills drag start handler
+    const handleInlineSkillDragStart = useCallback((event: DragStartEvent) => {
+        debugLog('SkillsEditor', '🟡 Inline skill onDragStart', { activeId: event.active.id })
+    }, [])
 
     // Inline skills reorder handler
     const handleInlineSkillDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
+        debugLog('SkillsEditor', '🟢 Inline skill onDragEnd', { activeId: active.id, overId: over?.id })
+
         if (over && active.id !== over.id) {
             const skills = block.data.skills || []
             const prefix = `skill-${block.id}-`
             const oldIndex = skills.findIndex((_, i) => `${prefix}${i}` === active.id)
             const newIndex = skills.findIndex((_, i) => `${prefix}${i}` === over.id)
 
+            debugLog('SkillsEditor', '📦 Inline skill reorder attempt', { oldIndex, newIndex })
+
             if (oldIndex !== -1 && newIndex !== -1) {
+                debugLog('SkillsEditor', '✅ Reordering inline skills')
                 onUpdate({ ...block.data, skills: arrayMove(skills, oldIndex, newIndex) })
+            } else {
+                debugLog('SkillsEditor', '❌ Invalid skill indices')
             }
         }
     }, [block.data, block.id, onUpdate])
@@ -392,6 +528,7 @@ export function SkillsEditor({ block, onUpdate }: SkillsEditorProps) {
                     id={categoryDndId}
                     sensors={sensors}
                     collisionDetection={closestCenter}
+                    onDragStart={handleCategoryDragStart}
                     onDragEnd={handleCategoryDragEnd}
                 >
                     <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
@@ -409,6 +546,8 @@ export function SkillsEditor({ block, onUpdate }: SkillsEditorProps) {
                                     onUpdateCategoryName={(name) => updateCategoryName(catIndex, name)}
                                     onRemoveCategory={() => removeCategory(catIndex)}
                                     onSkillDragEnd={handleSkillDragEnd}
+                                    onSkillDragStart={handleSkillDragStart}
+                                    activeSkillId={activeSkillId}
                                     onToggleSkill={(skillIndex) => toggleSkillInCategory(catIndex, skillIndex)}
                                     onUpdateSkill={(skillIndex, text) => updateSkillInCategory(catIndex, skillIndex, text)}
                                     onRemoveSkill={(skillIndex) => removeSkillFromCategory(catIndex, skillIndex)}
@@ -437,6 +576,7 @@ export function SkillsEditor({ block, onUpdate }: SkillsEditorProps) {
                 id={inlineSkillsDndId}
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragStart={handleInlineSkillDragStart}
                 onDragEnd={handleInlineSkillDragEnd}
             >
                 <SortableContext items={skillIds} strategy={horizontalListSortingStrategy}>

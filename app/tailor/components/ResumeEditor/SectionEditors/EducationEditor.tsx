@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useCallback, useId } from 'react'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
+import React, { useState, useCallback, useId, useEffect } from 'react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Icon } from '../icons'
@@ -9,6 +9,14 @@ import type { EducationBlock, BulletInput, EducationEntry } from '../../../../re
 import { getBulletText, isBulletEnabled, createBullet } from '../../../../resume-test/types'
 import { autoResize } from '../useAutoResize'
 import styles from '../ResumeEditor.module.css'
+
+// Debug helper
+const isDev = process.env.NODE_ENV === 'development'
+const debugLog = (context: string, message: string, data?: unknown) => {
+    if (isDev) {
+        console.log(`[DnD:${context}]`, message, data !== undefined ? data : '')
+    }
+}
 
 // Sortable Education Entry Component
 interface SortableEducationEntryProps {
@@ -273,9 +281,35 @@ export function EducationEditor({ block, onUpdate }: EducationEditorProps) {
     const getEntryId = useCallback((entry: EducationEntry) => `${prefix}${entry.id}`, [prefix])
     const getOriginalId = useCallback((sortableId: string) => sortableId.replace(prefix, ''), [prefix])
 
+    // Debug log entries on mount/change
+    useEffect(() => {
+        const entryIds = block.data.entries.map((e) => getEntryId(e))
+        debugLog('EducationEditor', '📋 Entries loaded/updated', {
+            blockId: block.id,
+            dndContextId: dndId,
+            entryCount: block.data.entries.length,
+            entryIds,
+        })
+    }, [block.data.entries, block.id, dndId, getEntryId])
+
+    // Handle drag start
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        debugLog('EducationEditor', '🟡 onDragStart called', {
+            activeId: event.active.id,
+            blockId: block.id,
+        })
+    }, [block.id])
+
     // Handle entry reordering
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
+
+        debugLog('EducationEditor', '🟢 onDragEnd called', {
+            activeId: active.id,
+            overId: over?.id,
+            blockId: block.id,
+        })
+
         if (over && active.id !== over.id) {
             const entries = block.data.entries
             const activeOriginalId = getOriginalId(active.id as string)
@@ -283,7 +317,15 @@ export function EducationEditor({ block, onUpdate }: EducationEditorProps) {
             const oldIndex = entries.findIndex((e) => e.id === activeOriginalId)
             const newIndex = entries.findIndex((e) => e.id === overOriginalId)
 
+            debugLog('EducationEditor', '📦 Attempting entry reorder', {
+                activeOriginalId,
+                overOriginalId,
+                oldIndex,
+                newIndex,
+            })
+
             if (oldIndex !== -1 && newIndex !== -1) {
+                debugLog('EducationEditor', '✅ Reordering entries')
                 onUpdate({ ...block.data, entries: arrayMove(entries, oldIndex, newIndex) })
                 // Update expanded index if needed
                 if (expandedIndex === oldIndex) {
@@ -295,9 +337,13 @@ export function EducationEditor({ block, onUpdate }: EducationEditorProps) {
                         setExpandedIndex(expandedIndex + 1)
                     }
                 }
+            } else {
+                debugLog('EducationEditor', '❌ Invalid indices for reorder', { oldIndex, newIndex })
             }
+        } else {
+            debugLog('EducationEditor', '⚠️ No valid drop target or same position')
         }
-    }, [block.data, onUpdate, expandedIndex, getOriginalId])
+    }, [block.data, block.id, onUpdate, expandedIndex, getOriginalId])
 
     const updateEntry = useCallback((
         entryIndex: number,
@@ -387,6 +433,7 @@ export function EducationEditor({ block, onUpdate }: EducationEditorProps) {
                 id={dndId}
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
                 <SortableContext items={entryIds} strategy={verticalListSortingStrategy}>

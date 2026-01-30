@@ -17,6 +17,15 @@ import {
 import type { ResumeBlock } from '../../../resume-test/types'
 import styles from './ResumeEditor.module.css'
 
+// Debug helper
+const isDev = process.env.NODE_ENV === 'development'
+const debugLog = (context: string, message: string, data?: unknown) => {
+    if (isDev) {
+        console.log(`[DnD:${context}]`, message, data !== undefined ? data : '')
+    }
+}
+
+
 // Sortable Section Block Component
 interface SortableSectionProps {
     block: ResumeBlock
@@ -44,6 +53,16 @@ function SortableSection({ block, isActive, onUpdate, renderEditor, setRef }: So
         opacity: isDragging ? 0.9 : 1,
         zIndex: isDragging ? 50 : 'auto',
     }
+
+    // Debug logging for section state
+    React.useEffect(() => {
+        if (isDragging) {
+            debugLog('SortableSection', `🔄 Section "${block.type}" is being dragged`, {
+                blockId: block.id,
+                transform: CSS.Transform.toString(transform),
+            })
+        }
+    }, [isDragging, block.id, block.type, transform])
 
     return (
         <div
@@ -112,26 +131,49 @@ export function EditPanel({ blocks, activeSection, onUpdate, onReorder }: EditPa
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
         const id = event.active.id as string
+        debugLog('EditPanel', '🟡 onDragStart called', {
+            activeId: id,
+            sectionIds: Array.from(sectionIdSet),
+            isValidSection: sectionIdSet.has(id),
+        })
+
         // Only set active if it's a section ID (not a nested item from child DndContext)
         if (sectionIdSet.has(id)) {
+            debugLog('EditPanel', '✅ Setting activeDragId for section', id)
             setActiveDragId(id)
+        } else {
+            debugLog('EditPanel', '⚠️ Ignoring drag start - not a section ID', id)
         }
     }, [sectionIdSet])
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
+        debugLog('EditPanel', '🟢 onDragEnd called', {
+            activeId: active.id,
+            overId: over?.id,
+            sectionIds: Array.from(sectionIdSet),
+        })
+
         setActiveDragId(null)
 
         // Only handle if the active item is a section (not from nested DndContext)
         const activeId = active.id as string
         if (!sectionIdSet.has(activeId)) {
-            return
+            debugLog('EditPanel', '⚠️ Ignoring drag end - not a section ID', activeId)
+            return // Ignore drags from nested contexts
         }
 
         if (over && active.id !== over.id) {
             const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order)
             const oldIndex = sortedBlocks.findIndex((b) => b.id === active.id)
             const newIndex = sortedBlocks.findIndex((b) => b.id === over.id)
+
+            debugLog('EditPanel', '📦 Attempting section reorder', {
+                oldIndex,
+                newIndex,
+                activeId: active.id,
+                overId: over.id,
+            })
 
             if (oldIndex !== -1 && newIndex !== -1) {
                 const reordered = arrayMove(sortedBlocks, oldIndex, newIndex)
@@ -140,10 +182,22 @@ export function EditPanel({ blocks, activeSection, onUpdate, onReorder }: EditPa
                     order: index,
                 }))
 
+                debugLog('EditPanel', '✅ Reordering sections', {
+                    before: sortedBlocks.map(b => b.type),
+                    after: updatedBlocks.map(b => b.type),
+                })
+
                 if (onReorder) {
                     onReorder(updatedBlocks)
                 }
+            } else {
+                debugLog('EditPanel', '❌ Invalid indices for reorder', { oldIndex, newIndex })
             }
+        } else {
+            debugLog('EditPanel', '⚠️ No valid drop target or same position', {
+                hasOver: !!over,
+                sameId: active.id === over?.id,
+            })
         }
     }, [blocks, onReorder, sectionIdSet])
 
@@ -205,6 +259,16 @@ export function EditPanel({ blocks, activeSection, onUpdate, onReorder }: EditPa
     // Sort blocks by order
     const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order)
     const blockIds = sortedBlocks.map((b) => b.id)
+
+    // Debug log blocks and IDs on mount/change
+    useEffect(() => {
+        debugLog('EditPanel', '📋 Blocks loaded/updated', {
+            blockCount: blocks.length,
+            blockIds,
+            blockTypes: sortedBlocks.map(b => ({ id: b.id, type: b.type, order: b.order })),
+            sectionIdSet: Array.from(sectionIdSet),
+        })
+    }, [blocks, blockIds, sortedBlocks, sectionIdSet])
 
     // Get dragged block info for overlay
     const activeDragBlock = activeDragId

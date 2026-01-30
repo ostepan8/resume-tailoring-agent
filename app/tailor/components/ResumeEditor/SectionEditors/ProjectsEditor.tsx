@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useCallback, useId } from 'react'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
+import React, { useState, useCallback, useId, useEffect } from 'react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Icon } from '../icons'
@@ -9,6 +9,14 @@ import type { ProjectsBlock, BulletInput, ProjectEntry } from '../../../../resum
 import { getBulletText, isBulletEnabled, createBullet } from '../../../../resume-test/types'
 import { autoResize } from '../useAutoResize'
 import styles from '../ResumeEditor.module.css'
+
+// Debug helper
+const isDev = process.env.NODE_ENV === 'development'
+const debugLog = (context: string, message: string, data?: unknown) => {
+    if (isDev) {
+        console.log(`[DnD:${context}]`, message, data !== undefined ? data : '')
+    }
+}
 
 interface ProjectsEditorProps {
     block: ProjectsBlock
@@ -270,9 +278,35 @@ export function ProjectsEditor({ block, onUpdate }: ProjectsEditorProps) {
     const getEntryId = useCallback((entry: ProjectEntry) => `${prefix}${entry.id}`, [prefix])
     const getOriginalId = useCallback((sortableId: string) => sortableId.replace(prefix, ''), [prefix])
 
+    // Debug log entries on mount/change
+    useEffect(() => {
+        const entryIds = block.data.entries.map((e) => getEntryId(e))
+        debugLog('ProjectsEditor', '📋 Entries loaded/updated', {
+            blockId: block.id,
+            dndContextId: dndId,
+            entryCount: block.data.entries.length,
+            entryIds,
+        })
+    }, [block.data.entries, block.id, dndId, getEntryId])
+
+    // Handle drag start
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        debugLog('ProjectsEditor', '🟡 onDragStart called', {
+            activeId: event.active.id,
+            blockId: block.id,
+        })
+    }, [block.id])
+
     // Handle entry reordering
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
+
+        debugLog('ProjectsEditor', '🟢 onDragEnd called', {
+            activeId: active.id,
+            overId: over?.id,
+            blockId: block.id,
+        })
+
         if (over && active.id !== over.id) {
             const entries = block.data.entries
             const activeOriginalId = getOriginalId(active.id as string)
@@ -280,7 +314,15 @@ export function ProjectsEditor({ block, onUpdate }: ProjectsEditorProps) {
             const oldIndex = entries.findIndex((e) => e.id === activeOriginalId)
             const newIndex = entries.findIndex((e) => e.id === overOriginalId)
 
+            debugLog('ProjectsEditor', '📦 Attempting entry reorder', {
+                activeOriginalId,
+                overOriginalId,
+                oldIndex,
+                newIndex,
+            })
+
             if (oldIndex !== -1 && newIndex !== -1) {
+                debugLog('ProjectsEditor', '✅ Reordering entries')
                 onUpdate({ ...block.data, entries: arrayMove(entries, oldIndex, newIndex) })
                 // Update expanded index if needed
                 if (expandedIndex === oldIndex) {
@@ -292,9 +334,13 @@ export function ProjectsEditor({ block, onUpdate }: ProjectsEditorProps) {
                         setExpandedIndex(expandedIndex + 1)
                     }
                 }
+            } else {
+                debugLog('ProjectsEditor', '❌ Invalid indices for reorder', { oldIndex, newIndex })
             }
+        } else {
+            debugLog('ProjectsEditor', '⚠️ No valid drop target or same position')
         }
-    }, [block.data, onUpdate, expandedIndex, getOriginalId])
+    }, [block.data, block.id, onUpdate, expandedIndex, getOriginalId])
 
     const updateEntry = useCallback((
         entryIndex: number,
@@ -386,6 +432,7 @@ export function ProjectsEditor({ block, onUpdate }: ProjectsEditorProps) {
                 id={dndId}
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
                 <SortableContext items={entryIds} strategy={verticalListSortingStrategy}>

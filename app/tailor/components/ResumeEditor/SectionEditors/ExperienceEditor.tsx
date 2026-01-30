@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useCallback, useId } from 'react'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
+import React, { useState, useCallback, useId, useEffect } from 'react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Icon } from '../icons'
@@ -9,6 +9,14 @@ import type { ExperienceBlock, BulletInput, ExperienceEntry } from '../../../../
 import { getBulletText, isBulletEnabled, createBullet } from '../../../../resume-test/types'
 import { autoResize } from '../useAutoResize'
 import styles from '../ResumeEditor.module.css'
+
+// Debug helper
+const isDev = process.env.NODE_ENV === 'development'
+const debugLog = (context: string, message: string, data?: unknown) => {
+    if (isDev) {
+        console.log(`[DnD:${context}]`, message, data !== undefined ? data : '')
+    }
+}
 
 // Sortable Experience Entry Component
 interface SortableEntryProps {
@@ -58,6 +66,17 @@ function SortableEntry({
         zIndex: isDragging ? 50 : 'auto',
     }
 
+    // Debug logging for entry state
+    useEffect(() => {
+        if (isDragging) {
+            debugLog('SortableEntry', `🔄 Entry "${entry.position || entry.company}" is being dragged`, {
+                sortableId,
+                entryIndex,
+                transform: CSS.Transform.toString(transform),
+            })
+        }
+    }, [isDragging, sortableId, entryIndex, entry.position, entry.company, transform])
+
     return (
         <div
             ref={setNodeRef}
@@ -80,6 +99,7 @@ function SortableEntry({
                 <button
                     type="button"
                     className={styles.dragHandle}
+                    data-entry-drag-handle="true"
                     {...attributes}
                     {...listeners}
                     onClick={(e) => e.stopPropagation()}
@@ -269,9 +289,36 @@ export function ExperienceEditor({ block, onUpdate }: ExperienceEditorProps) {
     const getEntryId = useCallback((entry: ExperienceEntry) => `${prefix}${entry.id}`, [prefix])
     const getOriginalId = useCallback((sortableId: string) => sortableId.replace(prefix, ''), [prefix])
 
+    // Debug log entries on mount/change
+    useEffect(() => {
+        const entryIds = block.data.entries.map((e) => getEntryId(e))
+        debugLog('ExperienceEditor', '📋 Entries loaded/updated', {
+            blockId: block.id,
+            dndContextId: dndId,
+            entryCount: block.data.entries.length,
+            entryIds,
+            entries: block.data.entries.map(e => ({ id: e.id, position: e.position })),
+        })
+    }, [block.data.entries, block.id, dndId, getEntryId])
+
+    // Handle drag start
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        debugLog('ExperienceEditor', '🟡 onDragStart called', {
+            activeId: event.active.id,
+            blockId: block.id,
+        })
+    }, [block.id])
+
     // Handle entry reordering
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
+
+        debugLog('ExperienceEditor', '🟢 onDragEnd called', {
+            activeId: active.id,
+            overId: over?.id,
+            blockId: block.id,
+        })
+
         if (over && active.id !== over.id) {
             const entries = block.data.entries
             const activeOriginalId = getOriginalId(active.id as string)
@@ -279,7 +326,21 @@ export function ExperienceEditor({ block, onUpdate }: ExperienceEditorProps) {
             const oldIndex = entries.findIndex((e) => e.id === activeOriginalId)
             const newIndex = entries.findIndex((e) => e.id === overOriginalId)
 
+            debugLog('ExperienceEditor', '📦 Attempting entry reorder', {
+                activeOriginalId,
+                overOriginalId,
+                oldIndex,
+                newIndex,
+                allEntryIds: entries.map(e => e.id),
+            })
+
             if (oldIndex !== -1 && newIndex !== -1) {
+                debugLog('ExperienceEditor', '✅ Reordering entries', {
+                    before: entries.map(e => e.position),
+                    fromIndex: oldIndex,
+                    toIndex: newIndex,
+                })
+
                 onUpdate({ ...block.data, entries: arrayMove(entries, oldIndex, newIndex) })
                 // Update expanded index if needed
                 if (expandedIndex === oldIndex) {
@@ -291,9 +352,21 @@ export function ExperienceEditor({ block, onUpdate }: ExperienceEditorProps) {
                         setExpandedIndex(expandedIndex + 1)
                     }
                 }
+            } else {
+                debugLog('ExperienceEditor', '❌ Invalid indices for reorder', {
+                    oldIndex,
+                    newIndex,
+                    activeOriginalId,
+                    overOriginalId,
+                })
             }
+        } else {
+            debugLog('ExperienceEditor', '⚠️ No valid drop target or same position', {
+                hasOver: !!over,
+                sameId: active.id === over?.id,
+            })
         }
-    }, [block.data, onUpdate, expandedIndex, getOriginalId])
+    }, [block.data, block.id, onUpdate, expandedIndex, getOriginalId])
 
     const updateEntry = useCallback((
         entryIndex: number,
@@ -386,6 +459,7 @@ export function ExperienceEditor({ block, onUpdate }: ExperienceEditorProps) {
                 id={dndId}
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
                 <SortableContext items={entryIds} strategy={verticalListSortingStrategy}>

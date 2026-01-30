@@ -1,14 +1,13 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
 import { SkeletonProfileSection } from '../../components/Skeleton'
 import styles from './profile.module.css'
 
 interface ProfileFormData {
-    full_name: string
-    email: string
     phone: string
     location: string
     linkedin_url: string
@@ -19,13 +18,12 @@ interface ProfileFormData {
 
 export default function ProfilePage() {
     const { user, profile, updateProfile } = useAuth()
+    const { user: clerkUser } = useUser()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [formData, setFormData] = useState<ProfileFormData>({
-        full_name: '',
-        email: '',
         phone: '',
         location: '',
         linkedin_url: '',
@@ -33,11 +31,17 @@ export default function ProfilePage() {
         website_url: '',
         professional_summary: '',
     })
+
+    // Get name and email from Clerk
+    const clerkName = clerkUser?.fullName || 
+        [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') || 
+        ''
+    const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || ''
     
     // Track if initial data has been fetched to prevent re-fetching on re-renders
     const hasFetchedRef = useRef(false)
 
-    const loadProfile = useCallback(async (userId: string, userEmail: string | undefined) => {
+    const loadProfile = useCallback(async (userId: string) => {
         setLoading(true)
 
         try {
@@ -52,8 +56,6 @@ export default function ProfilePage() {
                 setError('Failed to load profile data')
             } else if (data) {
                 setFormData({
-                    full_name: data.full_name || '',
-                    email: data.email || userEmail || '',
                     phone: data.phone || '',
                     location: data.location || '',
                     linkedin_url: data.linkedin_url || '',
@@ -61,12 +63,6 @@ export default function ProfilePage() {
                     website_url: data.website_url || '',
                     professional_summary: data.professional_summary || '',
                 })
-            } else {
-                // Profile doesn't exist yet, use email from auth
-                setFormData(prev => ({
-                    ...prev,
-                    email: userEmail || '',
-                }))
             }
         } catch (err) {
             console.error('Error loading profile:', err)
@@ -80,9 +76,9 @@ export default function ProfilePage() {
     useEffect(() => {
         if (user?.id && !hasFetchedRef.current) {
             hasFetchedRef.current = true
-            loadProfile(user.id, user.email)
+            loadProfile(user.id)
         }
-    }, [user?.id, user?.email, loadProfile])
+    }, [user?.id, loadProfile])
 
     const handleChange = (field: keyof ProfileFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
@@ -100,7 +96,6 @@ export default function ProfilePage() {
         try {
             const updates = {
                 id: user.id,
-                full_name: formData.full_name || null,
                 phone: formData.phone || null,
                 location: formData.location || null,
                 linkedin_url: formData.linkedin_url || null,
@@ -167,7 +162,7 @@ export default function ProfilePage() {
             </header>
 
             <form onSubmit={handleSubmit} className={styles.profileForm}>
-                {/* Contact Information Section */}
+                {/* Account Info (from Clerk) */}
                 <section className={styles.section}>
                     <div className={styles.sectionHeader}>
                         <div className={styles.sectionIcon}>
@@ -176,36 +171,39 @@ export default function ProfilePage() {
                                 <circle cx="12" cy="7" r="4" />
                             </svg>
                         </div>
-                        <h2>Contact Information</h2>
+                        <h2>Account Info</h2>
                     </div>
                     <p className={styles.sectionDescription}>
-                        This information will appear at the top of your generated resumes.
+                        Your name and email are synced from your account. These will appear on your resumes.
+                    </p>
+
+                    <div className={styles.accountInfoDisplay}>
+                        <div className={styles.accountInfoItem}>
+                            <span className={styles.accountInfoLabel}>Name</span>
+                            <span className={styles.accountInfoValue}>{clerkName || 'Not set'}</span>
+                        </div>
+                        <div className={styles.accountInfoItem}>
+                            <span className={styles.accountInfoLabel}>Email</span>
+                            <span className={styles.accountInfoValue}>{clerkEmail}</span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Contact Information Section */}
+                <section className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                        <div className={styles.sectionIcon} style={{ background: 'rgba(255, 92, 40, 0.1)' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-orange)" strokeWidth="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            </svg>
+                        </div>
+                        <h2>Contact Details</h2>
+                    </div>
+                    <p className={styles.sectionDescription}>
+                        Additional contact information for your resume.
                     </p>
 
                     <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label htmlFor="full_name">Full Name</label>
-                            <input
-                                id="full_name"
-                                type="text"
-                                value={formData.full_name}
-                                onChange={(e) => handleChange('full_name', e.target.value)}
-                                placeholder="John Doe"
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label htmlFor="email">Email Address</label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={formData.email}
-                                disabled
-                                className={styles.disabledInput}
-                            />
-                            <span className={styles.helpText}>Email is managed through your account settings</span>
-                        </div>
-
                         <div className={styles.formGroup}>
                             <label htmlFor="phone">Phone Number</label>
                             <input
@@ -386,10 +384,10 @@ export default function ProfilePage() {
                 <h3>Resume Header Preview</h3>
                 <div className={styles.previewCard}>
                     <div className={styles.previewName}>
-                        {formData.full_name || 'Your Name'}
+                        {clerkName || 'Your Name'}
                     </div>
                     <div className={styles.previewContact}>
-                        {formData.email && <span>{formData.email}</span>}
+                        {clerkEmail && <span>{clerkEmail}</span>}
                         {formData.phone && <span>{formData.phone}</span>}
                         {formData.location && <span>{formData.location}</span>}
                     </div>

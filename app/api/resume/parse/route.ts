@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLogger, logError } from "@/lib/logger";
 import { aiRateLimiter, applyRateLimit } from "@/lib/rate-limit";
-import { getUserFromRequest } from "@/lib/api-auth";
+import { getUserFromRequest, INTERNAL_USER_HEADER } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,15 +81,13 @@ export async function POST(request: NextRequest) {
     // Now call the structured parser to extract structured data
     const baseUrl = request.nextUrl.origin;
     
-    // Forward the authorization header to the internal API call
-    const authHeader = request.headers.get("authorization");
-    
     try {
+      // Pass the verified userId via internal header for server-to-server auth
       const structuredResponse = await fetch(`${baseUrl}/api/resume/parse-structured`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          ...(authHeader ? { "Authorization": authHeader } : {}),
+          [INTERNAL_USER_HEADER]: userId,
         },
         body: JSON.stringify({ text: rawText }),
       });

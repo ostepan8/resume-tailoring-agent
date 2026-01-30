@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import type { ResumeBlock as RB } from '../../../resume-test/types'
 import { SectionNav, extractSectionMeta } from './SectionNav'
 import { EditPanel } from './EditPanel'
 import { SaveStateIndicator } from './SaveStateIndicator'
-import { Icon } from './icons'
 import type { ResumeEditorProps, SaveState } from './types'
 import type { ResumeBlock, ResumeDocument } from '../../../resume-test/types'
 import styles from './ResumeEditor.module.css'
@@ -55,6 +55,15 @@ export function ResumeEditor({
             blocks: prev.blocks.map((block) =>
                 block.id === sectionId ? { ...block, enabled: !block.enabled } : block
             ),
+        }))
+        setSaveState('unsaved')
+    }, [])
+
+    // Handle section reordering via drag and drop
+    const handleSectionReorder = useCallback((reorderedBlocks: RB[]) => {
+        setDocument((prev) => ({
+            ...prev,
+            blocks: reorderedBlocks,
         }))
         setSaveState('unsaved')
     }, [])
@@ -161,6 +170,7 @@ export function ResumeEditor({
                     blocks={document.blocks}
                     activeSection={activeSection}
                     onUpdate={handleBlockUpdate}
+                    onReorder={handleSectionReorder}
                 />
             </div>
         </div>

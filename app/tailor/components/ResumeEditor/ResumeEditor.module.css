@@ -7,10 +7,10 @@
    CSS VARIABLES - Local tokens for this component
    ----------------------------------------------------------------------------- */
 .editor {
-    --re-bg-primary: #0f1115;
-    --re-bg-secondary: #16181d;
-    --re-bg-tertiary: #1c1f26;
-    --re-bg-elevated: #22262f;
+    --re-bg-primary: #101820;
+    --re-bg-secondary: #151d27;
+    --re-bg-tertiary: #1a232e;
+    --re-bg-elevated: #1f2936;
 
     --re-border-subtle: rgba(255, 255, 255, 0.06);
     --re-border-default: rgba(255, 255, 255, 0.1);
@@ -79,7 +79,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: var(--re-bg-primary);
+    background: var(--color-primary-black, #101820);
     font-family: var(--re-font-sans);
     color: var(--re-text-primary);
 }
@@ -108,6 +108,7 @@
     overflow-y: auto;
     background: var(--re-bg-secondary);
     padding: 1rem 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 @media (max-width: 768px) {
@@ -691,11 +692,11 @@
 /* Section Block - Container for each section */
 .sectionBlock {
     background: var(--re-bg-secondary);
-    border: 1px solid var(--re-border-subtle);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--re-radius-lg);
     padding: 1.25rem;
     margin-bottom: 1rem;
-    transition: border-color var(--re-transition-fast);
+    transition: border-color var(--re-transition-fast), box-shadow var(--re-transition-fast), transform 200ms ease;
     scroll-margin-top: 1rem;
     min-width: 0;
     /* Prevent horizontal overflow */
@@ -996,15 +997,16 @@
 }
 
 .entryCard {
-    background: var(--re-bg-secondary);
-    border: 1px solid var(--re-border-subtle);
+    background: var(--re-bg-tertiary);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--re-radius-lg);
     overflow: hidden;
     min-width: 0;
     /* Prevent horizontal overflow */
     transition:
         border-color var(--re-transition-fast),
-        box-shadow var(--re-transition-fast);
+        box-shadow var(--re-transition-fast),
+        transform 200ms ease;
 }
 
 .entryCard:hover {
@@ -1452,10 +1454,91 @@
 }
 
 .skillCategory {
-    background: var(--re-bg-secondary);
-    border: 1px solid var(--re-border-subtle);
+    background: var(--re-bg-tertiary);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--re-radius-lg);
     padding: 1rem;
+    transition: transform 200ms ease, box-shadow var(--re-transition-fast);
+}
+
+/* -----------------------------------------------------------------------------
+   DRAG AND DROP STYLES
+   ----------------------------------------------------------------------------- */
+.draggable {
+    cursor: grab;
+    user-select: none;
+}
+
+.draggable:active {
+    cursor: grabbing;
+}
+
+.dragging {
+    opacity: 0.9;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--re-accent);
+    transform: scale(1.02);
+    z-index: 100;
+}
+
+.dragOverlay {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: var(--re-bg-elevated);
+    border: 2px solid var(--re-accent);
+    border-radius: var(--re-radius-lg);
+    color: var(--re-text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.dragOver {
+    border-color: var(--re-accent);
+    background: var(--re-accent-soft);
+}
+
+.dragHandle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--re-text-disabled);
+    cursor: grab;
+    flex-shrink: 0;
+    border-radius: var(--re-radius-sm);
+    transition: color var(--re-transition-fast), background var(--re-transition-fast);
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+.dragHandle:hover {
+    color: var(--re-text-secondary);
+    background: var(--re-bg-tertiary);
+}
+
+.dragHandle:active {
+    cursor: grabbing;
+    color: var(--re-accent);
+}
+
+.dragHandle:focus {
+    outline: none;
+}
+
+.sortableItem {
+    transition: transform 200ms ease;
+}
+
+.sortableItemDragging {
+    z-index: 50;
 }
 
 .skillCategoryHeader {
@@ -1578,7 +1661,7 @@
     justify-content: space-between;
     padding: 1rem 1.5rem;
     background: var(--re-bg-secondary);
-    border-bottom: 1px solid var(--re-border-subtle);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .contextInfo {

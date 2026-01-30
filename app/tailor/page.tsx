@@ -2,10 +2,12 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import styles from './tailor.module.css'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../../lib/auth-context'
 import { createLogger } from '@/lib/logger'
+import { experienceDb, projectsDb } from '../../lib/database'
 import {
   JobDescriptionStep,
   TailoringStep,
@@ -28,6 +30,10 @@ export default function TailorPage() {
   // Track if auth check is complete to prevent flash
   const [authChecked, setAuthChecked] = useState(false)
 
+  // Profile data state for empty state check
+  const [hasProfileData, setHasProfileData] = useState<boolean | null>(null)
+  const [profileCheckDone, setProfileCheckDone] = useState(false)
+
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!loading) {
@@ -37,6 +43,34 @@ export default function TailorPage() {
       }
     }
   }, [user, loading, router])
+
+  // Check if user has profile data (experience or projects)
+  useEffect(() => {
+    async function checkProfileData() {
+      if (!user?.id) return
+
+      try {
+        const [experience, projects] = await Promise.all([
+          experienceDb.getAll(user.id),
+          projectsDb.getAll(user.id),
+        ])
+
+        const hasData = experience.length > 0 || projects.length > 0
+        setHasProfileData(hasData)
+        log('Profile data check:', { experience: experience.length, projects: projects.length, hasData })
+      } catch (err) {
+        log('Error checking profile data:', err)
+        // Default to allowing through on error - the API will catch it
+        setHasProfileData(true)
+      } finally {
+        setProfileCheckDone(true)
+      }
+    }
+
+    if (user?.id && !profileCheckDone) {
+      checkProfileData()
+    }
+  }, [user?.id, profileCheckDone])
 
   // Navigation state - start with job (step 1)
   const [currentStep, setCurrentStep] = useState<Step>('job')
@@ -256,7 +290,8 @@ export default function TailorPage() {
   // 1. Auth is still loading
   // 2. Auth check is complete but we haven't rendered yet  
   // 3. User is not authenticated (we're about to redirect)
-  if (loading || !authChecked || !user) {
+  // 4. Profile data check is still in progress
+  if (loading || !authChecked || !user || !profileCheckDone) {
     return (
       <div className={styles.container}>
         <Navbar />
@@ -264,6 +299,50 @@ export default function TailorPage() {
           <div className={styles.loadingSpinner} />
           <p>{!isConfigured ? 'Database not configured' : 'Loading...'}</p>
         </div>
+      </div>
+    )
+  }
+
+  // Show empty state if user has no experience or projects
+  if (hasProfileData === false) {
+    return (
+      <div className={styles.container}>
+        <Navbar />
+        <main className={styles.main}>
+          <div className={styles.emptyStateCard}>
+            <div className={styles.emptyStateIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6" />
+                <path d="M12 18v-6" />
+                <path d="M9 15h6" />
+              </svg>
+            </div>
+            <h1 className={styles.emptyStateTitle}>Add Your Experience First</h1>
+            <p className={styles.emptyStateDescription}>
+              Before we can tailor your resume, you need to add some content to work with.
+              Add your work experience or projects to get started.
+            </p>
+            <div className={styles.emptyStateActions}>
+              <Link href="/dashboard/experience" className={styles.emptyStatePrimaryButton}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                </svg>
+                Add Experience
+              </Link>
+              <Link href="/dashboard/projects" className={styles.emptyStateSecondaryButton}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                Add Projects
+              </Link>
+            </div>
+            <p className={styles.emptyStateHint}>
+              💡 Tip: The more detail you add, the better we can tailor your resume!
+            </p>
+          </div>
+        </main>
       </div>
     )
   }

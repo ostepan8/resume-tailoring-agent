@@ -1,8 +1,8 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   SignInButton,
   SignUpButton,
@@ -82,10 +82,10 @@ export default function Navbar() {
             <>
               <SignedOut>
                 <div className={styles.authButtons}>
-                  <SignInButton mode="modal">
+                  <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                     <button className={styles.signInBtn}>Sign In</button>
                   </SignInButton>
-                  <SignUpButton mode="modal">
+                  <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
                     <button className={styles.signUpBtn}>Sign Up</button>
                   </SignUpButton>
                 </div>
@@ -98,17 +98,7 @@ export default function Navbar() {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     aria-expanded={showUserMenu}
                   >
-                    {clerkUser?.imageUrl ? (
-                      <Image
-                        src={clerkUser.imageUrl}
-                        alt=""
-                        width={32}
-                        height={32}
-                        className={styles.userAvatar}
-                      />
-                    ) : (
-                      <div className={styles.userInitials}>{getUserInitials()}</div>
-                    )}
+                    <div className={styles.userInitials}>{getUserInitials()}</div>
                     <svg
                       className={`${styles.chevron} ${showUserMenu ? styles.chevronUp : ''}`}
                       width="12"

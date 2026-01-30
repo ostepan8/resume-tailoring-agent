@@ -1,12 +1,17 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import Image from 'next/image'
 import styles from './page.module.css'
 import Navbar from './components/Navbar'
 
 export default function HomePage() {
+  const router = useRouter()
+  const { isLoaded, isSignedIn } = useUser()
+  
   const [sdkVisible, setSdkVisible] = useState(false)
   const [featuresVisible, setFeaturesVisible] = useState<boolean[]>([false, false, false, false])
   const [ctaVisible, setCtaVisible] = useState(false)
@@ -16,6 +21,13 @@ export default function HomePage() {
   const featureRefs = useRef<(HTMLDivElement | null)[]>([])
   const ctaRef = useRef<HTMLDivElement>(null)
   const statsRef = useRef<HTMLDivElement>(null)
+
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.replace('/dashboard')
+    }
+  }, [isLoaded, isSignedIn, router])
 
   useEffect(() => {
     const observerOptions = {

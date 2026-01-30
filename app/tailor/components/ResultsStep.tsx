@@ -330,6 +330,18 @@ export function ResultsStep({
         []
     )
 
+    // Handle block reorder (drag and drop)
+    const handleBlockReorder = useCallback(
+        (reorderedBlocks: ResumeBlock[]) => {
+            setResumeDoc((prev) => ({
+                ...prev,
+                blocks: reorderedBlocks,
+            }))
+            setSaveState('unsaved')
+        },
+        []
+    )
+
     // Auto-save effect
     useEffect(() => {
         if (saveState !== 'unsaved') return
@@ -503,6 +515,7 @@ export function ResultsStep({
                                 blocks={resumeDoc.blocks}
                                 activeSection={activeSection}
                                 onUpdate={handleBlockUpdate}
+                                onReorder={handleBlockReorder}
                             />
                         ) : (
                             /* AI Summary Content - All sections stacked vertically for scrolling */

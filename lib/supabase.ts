@@ -4,24 +4,12 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-// Production-safe logging
-const IS_DEV = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEV_MODE === 'true'
-
 // Check if Supabase is properly configured
 export const isSupabaseConfigured = !!(
   supabaseUrl && 
   supabaseAnonKey && 
   !supabaseUrl.includes('placeholder')
 )
-
-// Debug logging - only log once and only in development
-let hasLoggedConfig = false
-if (IS_DEV && typeof window !== 'undefined' && !hasLoggedConfig) {
-  hasLoggedConfig = true
-  console.log('📦 Supabase Configuration:')
-  console.log('   URL:', supabaseUrl || '(empty)')
-  console.log('   isConfigured:', isSupabaseConfigured)
-}
 
 // Singleton pattern that works with Next.js HMR
 // Store the client on globalThis to persist across module reloads
@@ -802,12 +790,6 @@ export async function uploadResumeFile(
       .replace(/\.pdf$/i, '')
     const storagePath = `${userId}/${safeName}_${timestamp}.pdf`
 
-    if (IS_DEV) {
-      console.log('[uploadResumeFile] Uploading to bucket:', RESUME_BUCKET)
-      console.log('[uploadResumeFile] Storage path:', storagePath)
-      console.log('[uploadResumeFile] File size:', file.size, 'bytes')
-    }
-
     // Upload the file
     const { data, error } = await supabase.storage
       .from(RESUME_BUCKET)
@@ -821,19 +803,11 @@ export async function uploadResumeFile(
       return { success: false, error: error.message }
     }
 
-    if (IS_DEV) {
-      console.log('[uploadResumeFile] Upload successful, path:', data.path)
-    }
-
     // Get the public URL (even for private buckets, this returns the path)
     // We store this URL but use signed URLs for actual download
     const { data: urlData } = supabase.storage
       .from(RESUME_BUCKET)
       .getPublicUrl(data.path)
-
-    if (IS_DEV) {
-      console.log('[uploadResumeFile] Storing file URL:', urlData.publicUrl)
-    }
 
     return {
       success: true,
@@ -859,10 +833,6 @@ export async function getResumeFileUrl(
   expiresIn: number = 3600
 ): Promise<string | null> {
   try {
-    if (IS_DEV) {
-      console.log('[getResumeFileUrl] Input filePath:', filePath)
-    }
-    
     // Extract the storage path from various URL formats
     let storagePath = filePath
     
@@ -878,23 +848,15 @@ export async function getResumeFileUrl(
     else if (filePath.startsWith('resumes/')) {
       storagePath = filePath.substring('resumes/'.length)
     }
-    
-    if (IS_DEV) {
-      console.log('[getResumeFileUrl] Extracted storagePath:', storagePath)
-    }
 
     const { data, error } = await supabase.storage
       .from(RESUME_BUCKET)
       .createSignedUrl(storagePath, expiresIn)
 
     if (error) {
-      console.error('[getResumeFileUrl] Error creating signed URL:', error.message)
       return null
     }
 
-    if (IS_DEV) {
-      console.log('[getResumeFileUrl] Success! Signed URL created')
-    }
     return data.signedUrl
   } catch (err) {
     console.error('[getResumeFileUrl] Unexpected error:', err instanceof Error ? err.message : 'Unknown error')

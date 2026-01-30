@@ -46,14 +46,14 @@ let currentProvider: AIProvider | null = null;
 
 /**
  * Get the configured AI provider from environment.
- * Defaults to 'openai' if not set.
+ * Defaults to 'subconscious' if not set.
  */
 export function getProvider(): AIProvider {
   const provider = process.env.AI_PROVIDER?.toLowerCase();
-  if (provider === 'subconscious') {
-    return 'subconscious';
+  if (provider === 'openai') {
+    return 'openai';
   }
-  return 'openai'; // Default to OpenAI
+  return 'subconscious'; // Default to Subconscious
 }
 
 /**

@@ -5,10 +5,10 @@
 
 /* CSS Variables */
 .resultsContainer {
-  --rs-bg-primary: #0a0b0d;
-  --rs-bg-secondary: #111317;
-  --rs-bg-tertiary: #1a1d24;
-  --rs-bg-elevated: #22262f;
+  --rs-bg-primary: #101820;
+  --rs-bg-secondary: #151d27;
+  --rs-bg-tertiary: #1a232e;
+  --rs-bg-elevated: #1f2936;
 
   --rs-border-subtle: rgba(255, 255, 255, 0.06);
   --rs-border-default: rgba(255, 255, 255, 0.1);
@@ -29,7 +29,7 @@
   --rs-radius-lg: 14px;
 
   min-height: 100vh;
-  background: var(--rs-bg-primary);
+  background: var(--color-primary-black, #101820);
 }
 
 /* Reduced motion */

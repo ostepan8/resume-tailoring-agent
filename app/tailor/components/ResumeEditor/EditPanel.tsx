@@ -1,6 +1,9 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useId, useMemo } from 'react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core'
+import { useSortable, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Icon } from './icons'
 import { SECTION_CONFIG } from './types'
 import {
@@ -14,15 +17,135 @@ import {
 import type { ResumeBlock } from '../../../resume-test/types'
 import styles from './ResumeEditor.module.css'
 
+// Sortable Section Block Component
+interface SortableSectionProps {
+    block: ResumeBlock
+    isActive: boolean
+    onUpdate: (data: ResumeBlock['data']) => void
+    renderEditor: (block: ResumeBlock) => React.ReactNode
+    setRef: (el: HTMLDivElement | null) => void
+}
+
+function SortableSection({ block, isActive, onUpdate, renderEditor, setRef }: SortableSectionProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: block.id })
+
+    const config = SECTION_CONFIG[block.type] || { label: block.type, icon: 'plus' }
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.9 : 1,
+        zIndex: isDragging ? 50 : 'auto',
+    }
+
+    return (
+        <div
+            ref={(el) => {
+                setNodeRef(el)
+                setRef(el)
+            }}
+            id={`section-${block.id}`}
+            style={style}
+            className={`${styles.sectionBlock} ${!block.enabled ? styles.sectionBlockDisabled : ''} ${isDragging ? styles.dragging : ''}`}
+        >
+            <div className={styles.sectionHeader}>
+                <div className={styles.sectionHeaderLeft}>
+                    <button
+                        type="button"
+                        className={styles.dragHandle}
+                        data-section-drag-handle="true"
+                        {...attributes}
+                        {...listeners}
+                        aria-label="Drag to reorder section"
+                    >
+                        <Icon name="grip-vertical" size={16} />
+                    </button>
+                    <div className={styles.sectionIcon}>
+                        <Icon name={config.icon} size={16} />
+                    </div>
+                    <h2 className={styles.sectionTitle}>{config.label}</h2>
+                </div>
+                {!block.enabled && (
+                    <span className={styles.sectionDisabledBadge}>Hidden</span>
+                )}
+            </div>
+
+            {renderEditor(block)}
+        </div>
+    )
+}
+
 interface EditPanelProps {
     blocks: ResumeBlock[]
     activeSection: string | null
     onUpdate: (blockId: string, data: ResumeBlock['data']) => void
+    onReorder?: (reorderedBlocks: ResumeBlock[]) => void
 }
 
-export function EditPanel({ blocks, activeSection, onUpdate }: EditPanelProps) {
+export function EditPanel({ blocks, activeSection, onUpdate, onReorder }: EditPanelProps) {
     const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
     const containerRef = useRef<HTMLDivElement>(null)
+    const [activeDragId, setActiveDragId] = useState<string | null>(null)
+    const sectionDndId = useId()
+
+    // DnD sensors for section reordering
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
+
+    // Get the set of valid section IDs (memoized to prevent useCallback deps changing)
+    const sectionIdSet = useMemo(() => new Set(blocks.map(b => b.id)), [blocks])
+
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        const id = event.active.id as string
+        // Only set active if it's a section ID (not a nested item from child DndContext)
+        if (sectionIdSet.has(id)) {
+            setActiveDragId(id)
+        }
+    }, [sectionIdSet])
+
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
+        const { active, over } = event
+        setActiveDragId(null)
+
+        // Only handle if the active item is a section (not from nested DndContext)
+        const activeId = active.id as string
+        if (!sectionIdSet.has(activeId)) {
+            return
+        }
+
+        if (over && active.id !== over.id) {
+            const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order)
+            const oldIndex = sortedBlocks.findIndex((b) => b.id === active.id)
+            const newIndex = sortedBlocks.findIndex((b) => b.id === over.id)
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const reordered = arrayMove(sortedBlocks, oldIndex, newIndex)
+                const updatedBlocks = reordered.map((block, index) => ({
+                    ...block,
+                    order: index,
+                }))
+
+                if (onReorder) {
+                    onReorder(updatedBlocks)
+                }
+            }
+        }
+    }, [blocks, onReorder, sectionIdSet])
 
     // Scroll to active section when it changes (from nav click)
     useEffect(() => {
@@ -81,41 +204,49 @@ export function EditPanel({ blocks, activeSection, onUpdate }: EditPanelProps) {
 
     // Sort blocks by order
     const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order)
+    const blockIds = sortedBlocks.map((b) => b.id)
+
+    // Get dragged block info for overlay
+    const activeDragBlock = activeDragId
+        ? sortedBlocks.find(b => b.id === activeDragId)
+        : null
 
     return (
         <div className={styles.editPanel} ref={containerRef}>
-            {sortedBlocks.map((block) => {
-                const config = SECTION_CONFIG[block.type] || { label: block.type, icon: 'plus' }
-
-                return (
-                    <div
-                        key={block.id}
-                        id={`section-${block.id}`}
-                        ref={(el) => {
-                            if (el) {
-                                sectionRefs.current.set(block.id, el)
-                            } else {
-                                sectionRefs.current.delete(block.id)
-                            }
-                        }}
-                        className={`${styles.sectionBlock} ${!block.enabled ? styles.sectionBlockDisabled : ''}`}
-                    >
-                        <div className={styles.sectionHeader}>
-                            <div className={styles.sectionHeaderLeft}>
-                                <div className={styles.sectionIcon}>
-                                    <Icon name={config.icon} size={16} />
-                                </div>
-                                <h2 className={styles.sectionTitle}>{config.label}</h2>
-                            </div>
-                            {!block.enabled && (
-                                <span className={styles.sectionDisabledBadge}>Hidden</span>
-                            )}
+            <DndContext
+                id={sectionDndId}
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
+                    {sortedBlocks.map((block) => (
+                        <SortableSection
+                            key={block.id}
+                            block={block}
+                            isActive={activeSection === block.id}
+                            onUpdate={(data) => onUpdate(block.id, data)}
+                            renderEditor={renderEditor}
+                            setRef={(el) => {
+                                if (el) {
+                                    sectionRefs.current.set(block.id, el)
+                                } else {
+                                    sectionRefs.current.delete(block.id)
+                                }
+                            }}
+                        />
+                    ))}
+                </SortableContext>
+                <DragOverlay>
+                    {activeDragBlock ? (
+                        <div className={styles.dragOverlay}>
+                            <Icon name={SECTION_CONFIG[activeDragBlock.type]?.icon || 'plus'} size={16} />
+                            <span>{SECTION_CONFIG[activeDragBlock.type]?.label || activeDragBlock.type}</span>
                         </div>
-
-                        {renderEditor(block)}
-                    </div>
-                )
-            })}
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
         </div>
     )
 }

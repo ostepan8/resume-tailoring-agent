@@ -60,7 +60,7 @@ function loadMockResumeById(id: string): StoredResume | null {
         const savedResumes = JSON.parse(localStorage.getItem('mockSavedResumes') || '[]')
         const resume = savedResumes.find((r: { id: string }) => r.id === id)
         if (!resume) return null
-        
+
         return {
             id: resume.id,
             name: resume.name,
@@ -92,7 +92,7 @@ export default function EditResumePage() {
     // Loading state
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    
+
     // Resume data
     const [storedResume, setStoredResume] = useState<StoredResume | null>(null)
     const [resumeDoc, setResumeDoc] = useState<ResumeDocument | null>(null)
@@ -135,7 +135,7 @@ export default function EditResumePage() {
                     const response = await fetch(`/api/resume/${resumeId}`, {
                         credentials: 'include',
                     })
-                    
+
                     if (response.ok) {
                         const data = await response.json()
                         resume = data.resume
@@ -320,7 +320,7 @@ export default function EditResumePage() {
     // Download PDF
     const downloadPDF = useCallback(async () => {
         if (!resumeDoc) return
-        
+
         setIsGenerating(true)
         try {
             const blob = await pdf(<ResumePDF document={resumeDoc} />).toBlob()
@@ -359,10 +359,10 @@ export default function EditResumePage() {
     if (loading) {
         return (
             <div className={styles.resultsContainer}>
-                <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     height: '100vh',
                     color: 'rgba(255, 255, 255, 0.6)'
                 }}>
@@ -387,10 +387,10 @@ export default function EditResumePage() {
     if (error || !resumeDoc || !jobDescription || !tailoredResume) {
         return (
             <div className={styles.resultsContainer}>
-                <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     height: '100vh',
                     flexDirection: 'column',
                     gap: '1rem',
@@ -413,7 +413,7 @@ export default function EditResumePage() {
                     <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: 600 }}>
                         {error || 'Failed to load resume'}
                     </h2>
-                    <Link 
+                    <Link
                         href="/dashboard/resumes"
                         style={{
                             color: 'var(--color-primary-orange)',

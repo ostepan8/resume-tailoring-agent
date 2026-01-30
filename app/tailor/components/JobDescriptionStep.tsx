@@ -67,7 +67,7 @@ export const JobDescriptionStep = React.memo(function JobDescriptionStep({
   const fetchingRef = useRef(false)
   const lastFetchedUrlRef = useRef('')
   const mockLoadedRef = useRef(false)
-  
+
   // Auth headers helper - Clerk handles auth automatically via cookies/middleware
   const getAuthHeaders = useCallback(() => {
     return { 'Content-Type': 'application/json' }
@@ -428,10 +428,10 @@ export const JobDescriptionStep = React.memo(function JobDescriptionStep({
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontWeight: 500 }}>{error}</p>
                   {errorCode === 'page_access_error' && (
-                    <p style={{ 
-                      margin: '0.5rem 0 0 0', 
-                      fontSize: '0.85rem', 
-                      opacity: 0.8 
+                    <p style={{
+                      margin: '0.5rem 0 0 0',
+                      fontSize: '0.85rem',
+                      opacity: 0.8
                     }}>
                       💡 <strong>Tip:</strong> Copy the job description text from the page and paste it below instead.
                     </p>

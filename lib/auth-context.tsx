@@ -4,8 +4,6 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs'
 import { supabase, isSupabaseConfigured } from './supabase'
 
-const IS_DEV = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEV_MODE === 'true'
-
 export interface UserProfile {
     id: string
     email: string
@@ -74,25 +72,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     // Create or update user profile in Supabase when Clerk user changes
+    // Always sync full_name and email from Clerk to ensure they're up to date
+    // IMPORTANT: We must not overwrite has_completed_onboarding for existing users
     const syncUserToSupabase = useCallback(async (clerkUserId: string, email: string | undefined, fullName: string | null) => {
         if (!isSupabaseConfigured || !email) return null
 
         try {
-            // Try to fetch existing profile first
-            let existingProfile = await fetchProfile(clerkUserId)
+            // First, check if profile already exists
+            const existingProfile = await fetchProfile(clerkUserId)
 
-            if (!existingProfile) {
-                // Create new profile for this Clerk user
+            if (existingProfile) {
+                // Profile exists - only update Clerk-managed fields (email, full_name)
+                // Preserve has_completed_onboarding and other user-set fields
+                const { error } = await supabase
+                    .from('user_profiles')
+                    .update({
+                        email: email,
+                        full_name: fullName,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', clerkUserId)
+
+                if (error) {
+                    console.error('Error updating profile:', error)
+                    return existingProfile // Return existing profile even if update fails
+                }
+
+                return { ...existingProfile, email, full_name: fullName }
+            } else {
+                // Profile doesn't exist - create new one with onboarding not completed
                 const { data, error } = await supabase
                     .from('user_profiles')
-                    .upsert({
+                    .insert({
                         id: clerkUserId,
                         email: email,
                         full_name: fullName,
                         has_completed_onboarding: false,
                         created_at: new Date().toISOString(),
-                    }, {
-                        onConflict: 'id'
                     })
                     .select()
                     .single()
@@ -101,10 +117,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     console.error('Error creating profile:', error)
                     return null
                 }
-                existingProfile = data as UserProfile
-            }
 
-            return existingProfile
+                return data as UserProfile
+            }
         } catch (err) {
             console.error('Error syncing user to Supabase:', err)
             return null
@@ -117,12 +132,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (clerkUser) {
             setProfileLoading(true)
-            const fullName = clerkUser.fullName || 
-                [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || 
+            const fullName = clerkUser.fullName ||
+                [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
                 null
 
             syncUserToSupabase(
-                clerkUser.id, 
+                clerkUser.id,
                 clerkUser.primaryEmailAddress?.emailAddress,
                 fullName
             ).then((userProfile) => {
@@ -187,15 +202,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [user, profile])
 
     const loading = !clerkLoaded || profileLoading
-
-    if (IS_DEV && clerkLoaded) {
-        console.log('🔐 Auth State:', { 
-            clerkUser: clerkUser?.id, 
-            email: clerkUser?.primaryEmailAddress?.emailAddress,
-            profile: profile?.id,
-            loading 
-        })
-    }
 
     return (
         <AuthContext.Provider

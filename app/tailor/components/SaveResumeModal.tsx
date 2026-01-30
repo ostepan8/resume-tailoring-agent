@@ -46,7 +46,7 @@ export function SaveResumeModal({
     const handleSave = useCallback(async () => {
         // In mock mode or when Supabase isn't configured, skip auth check
         const isMockMode = IS_MOCK_MODE || !isSupabaseConfigured
-        
+
         if (!isMockMode && !user) {
             setErrorMessage('You must be logged in to save resumes')
             setSaveStatus('error')
@@ -78,7 +78,7 @@ export function SaveResumeModal({
                 setSaveStatus('uploading')
                 setStatusMessage('Uploading to storage...')
                 const uploadResult = await resumeStorage.upload(user!.id, file, resumeName)
-                
+
                 if (!uploadResult.success) {
                     throw new Error(uploadResult.error || 'Failed to upload PDF')
                 }
@@ -135,9 +135,8 @@ export function SaveResumeModal({
                     const existingResumes = JSON.parse(localStorage.getItem('mockSavedResumes') || '[]')
                     existingResumes.unshift(result.savedData) // Add to beginning
                     localStorage.setItem('mockSavedResumes', JSON.stringify(existingResumes))
-                    console.log('[MOCK MODE] Saved resume to localStorage:', result.savedData.name)
-                } catch (e) {
-                    console.warn('Failed to save to localStorage:', e)
+                } catch {
+                    // localStorage save failed - continue silently
                 }
             }
 

@@ -173,7 +173,7 @@ export default function ResumesPage() {
     const [extractedData, setExtractedData] = useState<ExtractedData | null>(null)
     const [filter, setFilter] = useState<ResumeFilter>('all')
     const fileInputRef = useRef<HTMLInputElement>(null)
-    
+
     // Track if initial data has been fetched to prevent re-fetching on re-renders
     const hasFetchedRef = useRef(false)
 
@@ -224,7 +224,7 @@ export default function ResumesPage() {
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         log('handleFileUpload: File selected', file?.name, file?.type, file?.size)
-        
+
         if (!file) {
             log('handleFileUpload: No file selected')
             return
@@ -315,11 +315,11 @@ export default function ResumesPage() {
                 skillsCount: extracted.skills.length,
                 projectsCount: extracted.projects.length,
             })
-            
+
             // Mark duplicates (items already in profile)
             setUploadMessage('Checking for existing items...')
             extracted = await markDuplicates(extracted, user.id)
-            
+
             setExtractedData(extracted)
             setUploadStatus('review')
             setUploadMessage('')
@@ -329,7 +329,7 @@ export default function ResumesPage() {
             log('handleFileUpload Error:', error)
             setUploadStatus('error')
             setUploadMessage(error instanceof Error ? error.message : 'Failed to process resume')
-            
+
             setTimeout(() => {
                 setUploadStatus('idle')
                 setUploadMessage('')
@@ -347,9 +347,9 @@ export default function ResumesPage() {
         fileUrl: string | null
     ): ExtractedData => {
         log('transformParsedData: Input', parsed)
-        
+
         const contactInfo = (parsed.contactInfo as ExtractedContactInfo) || {}
-        
+
         // Transform experience
         const rawExperience = (parsed.experience as Array<Record<string, unknown>>) || []
         const experience: ExtractedExperience[] = rawExperience.map((exp, i) => ({
@@ -384,7 +384,7 @@ export default function ResumesPage() {
         const skills: ExtractedSkill[] = []
         const rawSkills = parsed.skills
         log('Raw skills type:', typeof rawSkills, rawSkills)
-        
+
         if (Array.isArray(rawSkills)) {
             rawSkills.forEach((s, i) => {
                 if (typeof s === 'string') {
@@ -445,7 +445,7 @@ export default function ResumesPage() {
         userId: string
     ): Promise<ExtractedData> => {
         log('markDuplicates: Fetching existing profile data')
-        
+
         try {
             // Fetch all existing profile data in parallel
             const [existingExp, existingEdu, existingSkills, existingProj] = await Promise.all([
@@ -554,7 +554,7 @@ export default function ResumesPage() {
             return {
                 ...prev,
                 // Only accept items that are not duplicates
-                [type]: prev[type].map((item: { accepted: boolean; isDuplicate?: boolean }) => 
+                [type]: prev[type].map((item: { accepted: boolean; isDuplicate?: boolean }) =>
                     ({ ...item, accepted: item.isDuplicate ? false : true })
                 ),
             }
@@ -569,7 +569,7 @@ export default function ResumesPage() {
             if (!prev) return prev
             return {
                 ...prev,
-                [type]: prev[type].map((item: { accepted: boolean; isDuplicate?: boolean }) => 
+                [type]: prev[type].map((item: { accepted: boolean; isDuplicate?: boolean }) =>
                     ({ ...item, accepted: false })
                 ),
             }
@@ -603,7 +603,7 @@ export default function ResumesPage() {
             const acceptedEdu = extractedData.education.filter(e => e.accepted)
             const acceptedSkills = extractedData.skills.filter(s => s.accepted)
             const acceptedProj = extractedData.projects.filter(p => p.accepted)
-            
+
             log('Accepted counts:', {
                 experience: acceptedExp.length,
                 education: acceptedEdu.length,
@@ -631,7 +631,7 @@ export default function ResumesPage() {
             // Clerk handles auth automatically via cookies/middleware
             const syncResponse = await fetch('/api/resume/sync-profile', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
@@ -870,23 +870,23 @@ export default function ResumesPage() {
                 <div className={styles.reviewPage}>
                     {(() => {
                         // Calculate summary stats
-                        const totalItems = extractedData.experience.length + 
-                                          extractedData.education.length + 
-                                          extractedData.skills.length + 
-                                          extractedData.projects.length
-                        
+                        const totalItems = extractedData.experience.length +
+                            extractedData.education.length +
+                            extractedData.skills.length +
+                            extractedData.projects.length
+
                         const newExp = extractedData.experience.filter(e => !e.isDuplicate).length
                         const newEdu = extractedData.education.filter(e => !e.isDuplicate).length
                         const newSkills = extractedData.skills.filter(s => !s.isDuplicate).length
                         const newProj = extractedData.projects.filter(p => !p.isDuplicate).length
                         const totalNew = newExp + newEdu + newSkills + newProj
-                        
+
                         const dupExp = extractedData.experience.filter(e => e.isDuplicate).length
                         const dupEdu = extractedData.education.filter(e => e.isDuplicate).length
                         const dupSkills = extractedData.skills.filter(s => s.isDuplicate).length
                         const dupProj = extractedData.projects.filter(p => p.isDuplicate).length
                         const totalDup = dupExp + dupEdu + dupSkills + dupProj
-                        
+
                         const noDataExtracted = totalItems === 0
                         const allDuplicates = totalNew === 0 && totalDup > 0
 
@@ -965,7 +965,7 @@ export default function ResumesPage() {
                                         <div className={styles.checkIcon}>✓</div>
                                         <h2>You&apos;re all set!</h2>
                                         <p>
-                                            We found {totalDup} item{totalDup !== 1 ? 's' : ''} in this resume, 
+                                            We found {totalDup} item{totalDup !== 1 ? 's' : ''} in this resume,
                                             but they&apos;re all already saved in your profile.
                                         </p>
                                         <button onClick={cancelReview} className={styles.confirmBtn}>
@@ -978,17 +978,17 @@ export default function ResumesPage() {
                     })()}
 
                     {/* Only show sections if not all duplicates */}
-                    {extractedData.experience.some(e => !e.isDuplicate) || 
-                     extractedData.education.some(e => !e.isDuplicate) ||
-                     extractedData.skills.some(s => !s.isDuplicate) ||
-                     extractedData.projects.some(p => !p.isDuplicate) ? (
+                    {extractedData.experience.some(e => !e.isDuplicate) ||
+                        extractedData.education.some(e => !e.isDuplicate) ||
+                        extractedData.skills.some(s => !s.isDuplicate) ||
+                        extractedData.projects.some(p => !p.isDuplicate) ? (
                         <>
                             {/* Contact Info */}
                             {extractedData.contactInfo.name && (
                                 <section className={styles.reviewSection}>
                                     <h2>Contact Information</h2>
                                     <div className={styles.contactGrid}>
-                                        {Object.entries(extractedData.contactInfo).map(([key, value]) => 
+                                        {Object.entries(extractedData.contactInfo).map(([key, value]) =>
                                             value ? (
                                                 <div key={key} className={styles.contactItem}>
                                                     <label>{key}</label>
@@ -1000,168 +1000,168 @@ export default function ResumesPage() {
                                 </section>
                             )}
 
-                    {/* Experience */}
-                    {extractedData.experience.length > 0 && (
-                        <section className={styles.reviewSection}>
-                            <div className={styles.sectionHeader}>
-                                <h2>Experience ({extractedData.experience.filter(e => e.accepted).length}/{extractedData.experience.filter(e => !e.isDuplicate).length} new)</h2>
-                                <div className={styles.bulkActions}>
-                                    <button onClick={() => acceptAll('experience')}>All New</button>
-                                    <button onClick={() => denyAll('experience')}>None</button>
-                                </div>
-                            </div>
-                            <div className={styles.itemsList}>
-                                {extractedData.experience.map(exp => (
-                                    <div
-                                        key={exp.id}
-                                        className={`${styles.reviewItem} ${exp.isDuplicate ? styles.duplicate : ''} ${exp.accepted ? styles.accepted : styles.denied}`}
-                                        onClick={() => !exp.isDuplicate && toggleAccepted('experience', exp.id)}
-                                        style={exp.isDuplicate ? { cursor: 'default' } : undefined}
-                                    >
-                                        <div className={styles.checkbox}>
-                                            {exp.isDuplicate ? (
-                                                <span className={styles.dupCheck}>✓</span>
-                                            ) : exp.accepted ? (
-                                                <span>✓</span>
-                                            ) : null}
-                                        </div>
-                                        <div className={styles.itemContent}>
-                                            <div className={styles.itemHeader}>
-                                                <h3>{exp.position || 'Position'}</h3>
-                                                {exp.isDuplicate && <span className={styles.dupBadge}>Already in profile</span>}
-                                            </div>
-                                            <p className={styles.itemMeta}>{exp.company}{exp.location && ` • ${exp.location}`}</p>
-                                            <p className={styles.itemDates}>{exp.startDate} - {exp.endDate || 'Present'}</p>
+                            {/* Experience */}
+                            {extractedData.experience.length > 0 && (
+                                <section className={styles.reviewSection}>
+                                    <div className={styles.sectionHeader}>
+                                        <h2>Experience ({extractedData.experience.filter(e => e.accepted).length}/{extractedData.experience.filter(e => !e.isDuplicate).length} new)</h2>
+                                        <div className={styles.bulkActions}>
+                                            <button onClick={() => acceptAll('experience')}>All New</button>
+                                            <button onClick={() => denyAll('experience')}>None</button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Education */}
-                    {extractedData.education.length > 0 && (
-                        <section className={styles.reviewSection}>
-                            <div className={styles.sectionHeader}>
-                                <h2>Education ({extractedData.education.filter(e => e.accepted).length}/{extractedData.education.filter(e => !e.isDuplicate).length} new)</h2>
-                                <div className={styles.bulkActions}>
-                                    <button onClick={() => acceptAll('education')}>All New</button>
-                                    <button onClick={() => denyAll('education')}>None</button>
-                                </div>
-                            </div>
-                            <div className={styles.itemsList}>
-                                {extractedData.education.map(edu => (
-                                    <div
-                                        key={edu.id}
-                                        className={`${styles.reviewItem} ${edu.isDuplicate ? styles.duplicate : ''} ${edu.accepted ? styles.accepted : styles.denied}`}
-                                        onClick={() => !edu.isDuplicate && toggleAccepted('education', edu.id)}
-                                        style={edu.isDuplicate ? { cursor: 'default' } : undefined}
-                                    >
-                                        <div className={styles.checkbox}>
-                                            {edu.isDuplicate ? (
-                                                <span className={styles.dupCheck}>✓</span>
-                                            ) : edu.accepted ? (
-                                                <span>✓</span>
-                                            ) : null}
-                                        </div>
-                                        <div className={styles.itemContent}>
-                                            <div className={styles.itemHeader}>
-                                                <h3>{edu.degree}{edu.field && ` in ${edu.field}`}</h3>
-                                                {edu.isDuplicate && <span className={styles.dupBadge}>Already in profile</span>}
-                                            </div>
-                                            <p className={styles.itemMeta}>{edu.institution}</p>
-                                            <p className={styles.itemDates}>{edu.endDate || 'Present'}{edu.gpa && ` • GPA: ${edu.gpa}`}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Skills */}
-                    {extractedData.skills.length > 0 && (
-                        <section className={styles.reviewSection}>
-                            <div className={styles.sectionHeader}>
-                                <h2>Skills ({extractedData.skills.filter(s => s.accepted).length}/{extractedData.skills.filter(s => !s.isDuplicate).length} new)</h2>
-                                <div className={styles.bulkActions}>
-                                    <button onClick={() => acceptAll('skills')}>All New</button>
-                                    <button onClick={() => denyAll('skills')}>None</button>
-                                </div>
-                            </div>
-                            <div className={styles.skillsGrid}>
-                                {extractedData.skills.map(skill => (
-                                    <button
-                                        key={skill.id}
-                                        className={`${styles.skillChip} ${skill.isDuplicate ? styles.duplicate : ''} ${skill.accepted ? styles.accepted : styles.denied}`}
-                                        onClick={() => !skill.isDuplicate && toggleAccepted('skills', skill.id)}
-                                        disabled={skill.isDuplicate}
-                                        title={skill.isDuplicate ? 'Already in profile' : undefined}
-                                    >
-                                        {skill.isDuplicate && <span className={styles.dupCheckSmall}>✓</span>}
-                                        {skill.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Projects */}
-                    {extractedData.projects.length > 0 && (
-                        <section className={styles.reviewSection}>
-                            <div className={styles.sectionHeader}>
-                                <h2>Projects ({extractedData.projects.filter(p => p.accepted).length}/{extractedData.projects.filter(p => !p.isDuplicate).length} new)</h2>
-                                <div className={styles.bulkActions}>
-                                    <button onClick={() => acceptAll('projects')}>All New</button>
-                                    <button onClick={() => denyAll('projects')}>None</button>
-                                </div>
-                            </div>
-                            <div className={styles.itemsList}>
-                                {extractedData.projects.map(proj => (
-                                    <div
-                                        key={proj.id}
-                                        className={`${styles.reviewItem} ${proj.isDuplicate ? styles.duplicate : ''} ${proj.accepted ? styles.accepted : styles.denied}`}
-                                        onClick={() => !proj.isDuplicate && toggleAccepted('projects', proj.id)}
-                                        style={proj.isDuplicate ? { cursor: 'default' } : undefined}
-                                    >
-                                        <div className={styles.checkbox}>
-                                            {proj.isDuplicate ? (
-                                                <span className={styles.dupCheck}>✓</span>
-                                            ) : proj.accepted ? (
-                                                <span>✓</span>
-                                            ) : null}
-                                        </div>
-                                        <div className={styles.itemContent}>
-                                            <div className={styles.itemHeader}>
-                                                <h3>{proj.name}</h3>
-                                                {proj.isDuplicate && <span className={styles.dupBadge}>Already in profile</span>}
-                                            </div>
-                                            {proj.description && <p className={styles.itemMeta}>{proj.description}</p>}
-                                            {proj.technologies && proj.technologies.length > 0 && (
-                                                <div className={styles.techTags}>
-                                                    {proj.technologies.slice(0, 5).map((tech, i) => (
-                                                        <span key={i} className={styles.techTag}>{tech}</span>
-                                                    ))}
+                                    <div className={styles.itemsList}>
+                                        {extractedData.experience.map(exp => (
+                                            <div
+                                                key={exp.id}
+                                                className={`${styles.reviewItem} ${exp.isDuplicate ? styles.duplicate : ''} ${exp.accepted ? styles.accepted : styles.denied}`}
+                                                onClick={() => !exp.isDuplicate && toggleAccepted('experience', exp.id)}
+                                                style={exp.isDuplicate ? { cursor: 'default' } : undefined}
+                                            >
+                                                <div className={styles.checkbox}>
+                                                    {exp.isDuplicate ? (
+                                                        <span className={styles.dupCheck}>✓</span>
+                                                    ) : exp.accepted ? (
+                                                        <span>✓</span>
+                                                    ) : null}
                                                 </div>
-                                            )}
+                                                <div className={styles.itemContent}>
+                                                    <div className={styles.itemHeader}>
+                                                        <h3>{exp.position || 'Position'}</h3>
+                                                        {exp.isDuplicate && <span className={styles.dupBadge}>Already in profile</span>}
+                                                    </div>
+                                                    <p className={styles.itemMeta}>{exp.company}{exp.location && ` • ${exp.location}`}</p>
+                                                    <p className={styles.itemDates}>{exp.startDate} - {exp.endDate || 'Present'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Education */}
+                            {extractedData.education.length > 0 && (
+                                <section className={styles.reviewSection}>
+                                    <div className={styles.sectionHeader}>
+                                        <h2>Education ({extractedData.education.filter(e => e.accepted).length}/{extractedData.education.filter(e => !e.isDuplicate).length} new)</h2>
+                                        <div className={styles.bulkActions}>
+                                            <button onClick={() => acceptAll('education')}>All New</button>
+                                            <button onClick={() => denyAll('education')}>None</button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                                    <div className={styles.itemsList}>
+                                        {extractedData.education.map(edu => (
+                                            <div
+                                                key={edu.id}
+                                                className={`${styles.reviewItem} ${edu.isDuplicate ? styles.duplicate : ''} ${edu.accepted ? styles.accepted : styles.denied}`}
+                                                onClick={() => !edu.isDuplicate && toggleAccepted('education', edu.id)}
+                                                style={edu.isDuplicate ? { cursor: 'default' } : undefined}
+                                            >
+                                                <div className={styles.checkbox}>
+                                                    {edu.isDuplicate ? (
+                                                        <span className={styles.dupCheck}>✓</span>
+                                                    ) : edu.accepted ? (
+                                                        <span>✓</span>
+                                                    ) : null}
+                                                </div>
+                                                <div className={styles.itemContent}>
+                                                    <div className={styles.itemHeader}>
+                                                        <h3>{edu.degree}{edu.field && ` in ${edu.field}`}</h3>
+                                                        {edu.isDuplicate && <span className={styles.dupBadge}>Already in profile</span>}
+                                                    </div>
+                                                    <p className={styles.itemMeta}>{edu.institution}</p>
+                                                    <p className={styles.itemDates}>{edu.endDate || 'Present'}{edu.gpa && ` • GPA: ${edu.gpa}`}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
 
-                        {/* Footer for sections view */}
-                        <div className={styles.reviewFooter}>
-                            <button onClick={cancelReview} className={styles.cancelBtn}>Cancel</button>
-                            <button onClick={confirmAndSync} className={styles.confirmBtn}>
-                                Add {
-                                    extractedData.experience.filter(e => e.accepted && !e.isDuplicate).length +
-                                    extractedData.education.filter(e => e.accepted && !e.isDuplicate).length +
-                                    extractedData.skills.filter(s => s.accepted && !s.isDuplicate).length +
-                                    extractedData.projects.filter(p => p.accepted && !p.isDuplicate).length
-                                } Items
-                            </button>
-                        </div>
+                            {/* Skills */}
+                            {extractedData.skills.length > 0 && (
+                                <section className={styles.reviewSection}>
+                                    <div className={styles.sectionHeader}>
+                                        <h2>Skills ({extractedData.skills.filter(s => s.accepted).length}/{extractedData.skills.filter(s => !s.isDuplicate).length} new)</h2>
+                                        <div className={styles.bulkActions}>
+                                            <button onClick={() => acceptAll('skills')}>All New</button>
+                                            <button onClick={() => denyAll('skills')}>None</button>
+                                        </div>
+                                    </div>
+                                    <div className={styles.skillsGrid}>
+                                        {extractedData.skills.map(skill => (
+                                            <button
+                                                key={skill.id}
+                                                className={`${styles.skillChip} ${skill.isDuplicate ? styles.duplicate : ''} ${skill.accepted ? styles.accepted : styles.denied}`}
+                                                onClick={() => !skill.isDuplicate && toggleAccepted('skills', skill.id)}
+                                                disabled={skill.isDuplicate}
+                                                title={skill.isDuplicate ? 'Already in profile' : undefined}
+                                            >
+                                                {skill.isDuplicate && <span className={styles.dupCheckSmall}>✓</span>}
+                                                {skill.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Projects */}
+                            {extractedData.projects.length > 0 && (
+                                <section className={styles.reviewSection}>
+                                    <div className={styles.sectionHeader}>
+                                        <h2>Projects ({extractedData.projects.filter(p => p.accepted).length}/{extractedData.projects.filter(p => !p.isDuplicate).length} new)</h2>
+                                        <div className={styles.bulkActions}>
+                                            <button onClick={() => acceptAll('projects')}>All New</button>
+                                            <button onClick={() => denyAll('projects')}>None</button>
+                                        </div>
+                                    </div>
+                                    <div className={styles.itemsList}>
+                                        {extractedData.projects.map(proj => (
+                                            <div
+                                                key={proj.id}
+                                                className={`${styles.reviewItem} ${proj.isDuplicate ? styles.duplicate : ''} ${proj.accepted ? styles.accepted : styles.denied}`}
+                                                onClick={() => !proj.isDuplicate && toggleAccepted('projects', proj.id)}
+                                                style={proj.isDuplicate ? { cursor: 'default' } : undefined}
+                                            >
+                                                <div className={styles.checkbox}>
+                                                    {proj.isDuplicate ? (
+                                                        <span className={styles.dupCheck}>✓</span>
+                                                    ) : proj.accepted ? (
+                                                        <span>✓</span>
+                                                    ) : null}
+                                                </div>
+                                                <div className={styles.itemContent}>
+                                                    <div className={styles.itemHeader}>
+                                                        <h3>{proj.name}</h3>
+                                                        {proj.isDuplicate && <span className={styles.dupBadge}>Already in profile</span>}
+                                                    </div>
+                                                    {proj.description && <p className={styles.itemMeta}>{proj.description}</p>}
+                                                    {proj.technologies && proj.technologies.length > 0 && (
+                                                        <div className={styles.techTags}>
+                                                            {proj.technologies.slice(0, 5).map((tech, i) => (
+                                                                <span key={i} className={styles.techTag}>{tech}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Footer for sections view */}
+                            <div className={styles.reviewFooter}>
+                                <button onClick={cancelReview} className={styles.cancelBtn}>Cancel</button>
+                                <button onClick={confirmAndSync} className={styles.confirmBtn}>
+                                    Add {
+                                        extractedData.experience.filter(e => e.accepted && !e.isDuplicate).length +
+                                        extractedData.education.filter(e => e.accepted && !e.isDuplicate).length +
+                                        extractedData.skills.filter(s => s.accepted && !s.isDuplicate).length +
+                                        extractedData.projects.filter(p => p.accepted && !p.isDuplicate).length
+                                    } Items
+                                </button>
+                            </div>
                         </>
                     ) : null}
                 </div>
@@ -1262,9 +1262,9 @@ export default function ResumesPage() {
                                                         {resume.saved_job.company && ` at ${resume.saved_job.company}`}
                                                     </p>
                                                     {resume.saved_job.url && (
-                                                        <a 
-                                                            href={resume.saved_job.url} 
-                                                            target="_blank" 
+                                                        <a
+                                                            href={resume.saved_job.url}
+                                                            target="_blank"
                                                             rel="noopener noreferrer"
                                                             className={styles.jobLink}
                                                             onClick={(e) => e.stopPropagation()}
@@ -1305,9 +1305,9 @@ export default function ResumesPage() {
                                         </div>
                                         <div className={styles.resumeActions}>
                                             {isTailored && (
-                                                <Link 
-                                                    href={`/dashboard/resumes/edit/${resume.id}`} 
-                                                    className={styles.editBtn} 
+                                                <Link
+                                                    href={`/dashboard/resumes/edit/${resume.id}`}
+                                                    className={styles.editBtn}
                                                     title="Edit"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >

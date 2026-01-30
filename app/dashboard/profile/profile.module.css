@@ -154,6 +154,36 @@
     cursor: not-allowed;
 }
 
+/* Account Info Display (Clerk data) */
+.accountInfoDisplay {
+    display: flex;
+    gap: 2rem;
+    padding: 1rem 1.25rem;
+    background: rgba(62, 208, 195, 0.05);
+    border: 1px solid rgba(62, 208, 195, 0.15);
+    border-radius: 12px;
+}
+
+.accountInfoItem {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.accountInfoLabel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.accountInfoValue {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-background-cream);
+}
+
 .inputError {
     border-color: #ff6b6b !important;
 }

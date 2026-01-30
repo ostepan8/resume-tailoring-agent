@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getAIClient,
-  DEFAULT_ENGINE,
-} from "@/lib/ai-client";
+import OpenAI from "openai";
 import { createLogger, logError } from "@/lib/logger";
 import { aiRateLimiter, applyRateLimit } from "@/lib/rate-limit";
 import { getUserFromRequest } from "@/lib/api-auth";
@@ -15,6 +12,9 @@ const log = createLogger("api/resume/parse-structured");
 // Mock mode for testing without API calls
 // Use NEXT_PUBLIC_USE_MOCK for consistency with frontend
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+
+// Use OpenAI directly for resume parsing (faster than Subconscious for this use case)
+const OPENAI_MODEL = "gpt-4o-mini"; // Fast and cheap for structured extraction
 
 const PARSING_PROMPT = `You are an expert resume parser. Extract structured data from the resume text below.
 
@@ -243,7 +243,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { text } = body;
 
+    log(`Received request with text length: ${text?.length || 0}`);
+
     if (!text || typeof text !== "string") {
+      log("ERROR: No text provided");
       return NextResponse.json(
         { error: "Resume text is required" },
         { status: 400 }
@@ -259,36 +262,50 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Real AI parsing
-    const client = getAIClient();
-    const prompt = PARSING_PROMPT.replace("{resumeText}", text);
-
-    const run = await client.run({
-      engine: DEFAULT_ENGINE,
-      input: {
-        instructions: prompt,
-        tools: [],
-      },
-    });
-
-    // Poll for completion (max 2 minutes for parsing)
-    const maxWaitMs = 120000;
-    const pollIntervalMs = 2000;
-    const startTime = Date.now();
-
-    let finalRun = run;
-    while (Date.now() - startTime < maxWaitMs) {
-      await new Promise((r) => setTimeout(r, pollIntervalMs));
-      finalRun = await client.get(run.runId);
-
-      if (finalRun.status === "succeeded" || finalRun.status === "failed") {
-        break;
-      }
+    // Use OpenAI directly for resume parsing (faster than async Subconscious)
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      log("ERROR: OPENAI_API_KEY not set");
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 500 }
+      );
     }
 
-    if (finalRun.status !== "succeeded" || !finalRun.result?.answer) {
-      logError("api/resume/parse-structured", "Parsing failed", finalRun.status);
-      // Return basic fallback
+    const openai = new OpenAI({ apiKey: openaiKey });
+    const prompt = PARSING_PROMPT.replace("{resumeText}", text);
+    log(`Using OpenAI model: ${OPENAI_MODEL}, prompt length: ${prompt.length} chars`);
+
+    log("Calling OpenAI...");
+    const startTime = Date.now();
+    
+    let response;
+    try {
+      response = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
+        messages: [
+          { 
+            role: "system", 
+            content: "You are an expert resume parser. Return ONLY valid JSON, no markdown." 
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.3, // Lower temperature for more consistent parsing
+        max_tokens: 8000,
+      });
+      
+      const elapsed = Date.now() - startTime;
+      log(`OpenAI responded in ${elapsed}ms`);
+    } catch (openaiError) {
+      log(`ERROR calling OpenAI: ${openaiError instanceof Error ? openaiError.message : openaiError}`);
+      throw openaiError;
+    }
+
+    const answer = response.choices[0]?.message?.content || "";
+    log(`Answer length: ${answer.length} chars`);
+
+    if (!answer) {
+      log("ERROR: Empty response from OpenAI");
       return NextResponse.json({
         fullText: text,
         sections: [{ title: "Resume", content: text, order: 0 }],
@@ -299,18 +316,20 @@ export async function POST(request: NextRequest) {
     // Parse the AI response
     let parsed;
     try {
-      const answer = finalRun.result.answer;
-      if (typeof answer === "string") {
-        const cleaned = answer
-          .replace(/```json\n?/g, "")
-          .replace(/```\n?/g, "")
-          .trim();
-        parsed = JSON.parse(cleaned);
-      } else {
-        parsed = answer;
-      }
+      const cleaned = answer
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+      log(`Cleaned answer length: ${cleaned.length}`);
+      parsed = JSON.parse(cleaned);
+      
+      log(`Parsed result: experience=${parsed.experience?.length || 0}, ` +
+          `education=${parsed.education?.length || 0}, ` +
+          `skills=${typeof parsed.skills}, ` +
+          `projects=${parsed.projects?.length || 0}`);
     } catch (parseError) {
-      logError("api/resume/parse-structured", "Failed to parse AI response", parseError);
+      log(`ERROR parsing JSON: ${parseError instanceof Error ? parseError.message : parseError}`);
+      log(`Raw answer preview: ${answer.substring(0, 500)}`);
       return NextResponse.json({
         fullText: text,
         sections: [{ title: "Resume", content: text, order: 0 }],
@@ -318,11 +337,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    log("Returning parsed resume successfully");
     return NextResponse.json({
       ...parsed,
       fullText: text,
     });
   } catch (error) {
+    log(`FATAL ERROR: ${error instanceof Error ? error.message : error}`);
     logError("api/resume/parse-structured", "Structured parse error", error);
     return NextResponse.json(
       { error: "Failed to parse resume" },

@@ -33,19 +33,39 @@ export function getServerSupabase() {
 }
 
 /**
- * Get the authenticated user's ID from Clerk.
+ * Internal auth header name for server-to-server calls.
+ * This allows already-authenticated routes to pass the verified userId
+ * to internal API calls without needing to re-authenticate via Clerk.
+ */
+export const INTERNAL_USER_HEADER = "x-internal-user-id";
+
+/**
+ * Get the authenticated user's ID from Clerk, or from internal header.
+ * 
+ * For browser requests: Uses Clerk's auth() to get userId from cookies
+ * For internal server-to-server calls: Uses x-internal-user-id header
  * 
  * @returns User ID if authenticated, null otherwise
  * 
  * @example
  * ```typescript
- * const userId = await getUserFromRequest();
+ * const userId = await getUserFromRequest(request);
  * if (!userId) {
  *   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
  * }
  * ```
  */
-export async function getUserFromRequest(_request?: NextRequest): Promise<string | null> {
+export async function getUserFromRequest(request?: NextRequest): Promise<string | null> {
+  // Check for internal server-to-server auth header first
+  if (request) {
+    const internalUserId = request.headers.get(INTERNAL_USER_HEADER);
+    if (internalUserId) {
+      // This is a trusted internal call from another API route
+      return internalUserId;
+    }
+  }
+  
+  // Otherwise, use Clerk auth for browser requests
   try {
     const { userId } = await auth();
     return userId;

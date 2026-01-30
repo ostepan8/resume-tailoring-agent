@@ -520,7 +520,9 @@
 }
 
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Progress bar */
@@ -895,8 +897,13 @@
 }
 
 @keyframes loadingFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .loadingSpinner {
@@ -937,6 +944,108 @@
 }
 
 @keyframes loadingTextPulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Empty state - no profile data */
+.emptyStateCard {
+  max-width: 520px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+}
+
+.emptyStateIcon {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 92, 40, 0.15), rgba(255, 92, 40, 0.05));
+  border: 2px solid rgba(255, 92, 40, 0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-orange);
+}
+
+.emptyStateTitle {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-background-cream);
+  margin-bottom: 0.75rem;
+}
+
+.emptyStateDescription {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-background-cream);
+  opacity: 0.7;
+  margin-bottom: 2rem;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.emptyStatePrimaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--color-primary-orange);
+  color: var(--color-primary-black);
+  padding: 0.875rem 1.75rem;
+  border-radius: 100px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.emptyStatePrimaryButton:hover {
+  background: var(--color-secondary-orange);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(255, 92, 40, 0.3);
+}
+
+.emptyStateSecondaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-background-cream);
+  padding: 0.875rem 1.75rem;
+  border-radius: 100px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.emptyStateSecondaryButton:hover {
+  border-color: var(--color-background-cream);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.emptyStateHint {
+  font-size: 0.9rem;
+  color: var(--color-background-cream);
+  opacity: 0.5;
+  margin: 0;
 }

@@ -201,6 +201,20 @@ export function EditPanel({ blocks, activeSection, onUpdate, onReorder }: EditPa
         }
     }, [blocks, onReorder, sectionIdSet])
 
+    // Sort blocks by order
+    const sortedBlocks = useMemo(() => [...blocks].sort((a, b) => a.order - b.order), [blocks])
+    const blockIds = useMemo(() => sortedBlocks.map((b) => b.id), [sortedBlocks])
+
+    // Debug log blocks and IDs on mount/change
+    useEffect(() => {
+        debugLog('EditPanel', '📋 Blocks loaded/updated', {
+            blockCount: blocks.length,
+            blockIds,
+            blockTypes: sortedBlocks.map(b => ({ id: b.id, type: b.type, order: b.order })),
+            sectionIdSet: Array.from(sectionIdSet),
+        })
+    }, [blocks, blockIds, sortedBlocks, sectionIdSet])
+
     // Scroll to active section when it changes (from nav click)
     useEffect(() => {
         if (activeSection) {
@@ -255,20 +269,6 @@ export function EditPanel({ blocks, activeSection, onUpdate, onReorder }: EditPa
                 )
         }
     }
-
-    // Sort blocks by order
-    const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order)
-    const blockIds = sortedBlocks.map((b) => b.id)
-
-    // Debug log blocks and IDs on mount/change
-    useEffect(() => {
-        debugLog('EditPanel', '📋 Blocks loaded/updated', {
-            blockCount: blocks.length,
-            blockIds,
-            blockTypes: sortedBlocks.map(b => ({ id: b.id, type: b.type, order: b.order })),
-            sectionIdSet: Array.from(sectionIdSet),
-        })
-    }, [blocks, blockIds, sortedBlocks, sectionIdSet])
 
     // Get dragged block info for overlay
     const activeDragBlock = activeDragId
